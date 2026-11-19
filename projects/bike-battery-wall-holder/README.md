@@ -31,11 +31,11 @@ face.
 |---|---|
 | Battery | 92 (W) × 91 (D) × 380 (H) mm, 4 kg |
 | Pocket | 94.4 × 92.5 mm (1.2 mm side slack per side, 1.5 mm front) |
-| Outside envelope | 104.4 (W) × 105.5 (D) × 217 (H) mm |
-| Battery captured | 209 mm — 55 % of its height |
-| Back plate / side walls / floor | 8 / 5 / 8 mm |
-| Front lips | 20 mm reach, 5 mm thick, 54.4 mm open window between them |
-| Screw pattern | 44 mm apart in X, 149 mm apart in Z |
+| Outside envelope | 102.4 (W) × 102.5 (D) × 158 (H) mm |
+| Battery captured | 152 mm — 40 % of its height |
+| Back plate / side walls / floor | 5 / 4 / 6 mm |
+| Front lips | 20 mm reach, 5 mm thick, 106.4 mm tall (70 % of the pocket), 54.4 mm open window between them |
+| Screw pattern | 44 mm apart in X, 92 mm apart in Z |
 | Charging port | ⌀35 mm, centre 30 mm from the battery's back face and 30 mm from its bottom face |
 | Solid volume | ≈ 498 cm³ (≈ 505 g PETG as sliced below) |
 
@@ -51,7 +51,7 @@ floor or a shelf gets knocked over. The goals that drove the design:
 - **Drop in / lift out with one hand** — no latch; a lead-in chamfer at the top
   of the pocket guides the battery in.
 - **Charge in place** — the side opening lines up with the battery's charging port.
-- **Hold at least half the battery height** so it cannot tip out of the cradle.
+- **Hold at least 35 % of the battery height** (40 % by default) so it cannot tip out of the cradle.
 - **Carry 4 kg on a wall safely** — the weight sits on a thick floor shelf and
   the back plate is screwed to the wall with four countersunk screws.
 - **Print without supports** in PETG on a Bambu Lab printer.
@@ -92,15 +92,16 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `wall_side` | 5.0 | Side walls |
 | `wall_floor` | 8.0 | Floor shelf — carries the full battery weight |
 | **Capture height** | | |
-| `capture_frac` | 0.55 | Fraction of the battery height the holder wraps (≥ 0.5) |
+| `capture_frac` | 0.40 | Fraction of the battery height the holder wraps (≥ 0.35) |
 | `capture_h_override` | 0 | Explicit capture height (0 = derive from `capture_frac`) |
 | **Front retaining lips** | | |
 | `lip_w` | 20.0 | How far each lip reaches inward from its side wall |
 | `lip_t` | 5.0 | Lip thickness |
+| `lip_h_frac` | 0.70 | Lip height as a fraction of the pocket height, from the floor up (0.50 – 1.00) |
 | **Top lead-in chamfer** | | |
-| `lead_in_h` | 15.0 | Chamfer height from the top edge down |
+| `lead_in_h` | 15.0 | Chamfer height from the top edge down (also applied from the top of the lips) |
 | `lead_in_x` | 2.0 | Extra opening per side at the very top |
-| `lead_in_y` | 7.0 | Extra opening at the front at the top (≥ `lip_t` fully tapers the lips) |
+| `lead_in_y` | 7.0 | Extra opening at the front at the top of the pocket and of the lips (≥ `lip_t` gives a knife edge) |
 | **Mounting screws** | | |
 | `screw_d` | 4.0 | Nominal screw diameter |
 | `screw_head_nom_d` | 8.0 | Nominal countersunk head diameter |
@@ -126,10 +127,10 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `strap_enable` | true | Cut the strap slots through both lips |
 | `strap_h` | 25.0 | Slot height (strap width) |
 | `strap_t` | 4.0 | Slot width (strap thickness + slack) |
-| `strap_z_rows` | `[]` | Slot centre heights from the part bottom (`[]` = auto, one row near the top) |
-| `strap_z_margin` | 45 | Auto row: distance of the slot centre below the part top |
+| `strap_z_rows` | `[]` | Slot centre heights from the part bottom (`[]` = auto, one row near the top of the lips) |
+| `strap_z_margin` | 45 | Auto row: distance of the slot centre below the top of the lips |
 | `strap_rim_min` | 3 | Minimum lip material left on each side of a slot |
-| `strap_lead_in_gap` | 5 | Minimum gap between a slot and the top lead-in taper |
+| `strap_lead_in_gap` | 5 | Minimum gap between a slot and the lead-in taper of the lips |
 | **Printing** | | |
 | `bed_chamfer` | 0.6 | Chamfer on the bed-facing outer edges (elephant-foot relief) |
 | `overhang_angle` | 45 | Max unsupported overhang of your printer — shapes the teardrop port and collar, degrees |
@@ -138,17 +139,16 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 The model `assert`s its own consistency: it refuses to render if the
 countersink no longer fits the back plate, the port opening would break into
 the floor/back plate or run past the lips, the lips overlap, the front window
-gets too narrow to drive a screw through, a strap slot lands in the lead-in
-taper, or the bed chamfer is larger than the thinnest wall. `echo` prints a
+gets too narrow to drive a screw through, a strap slot runs into the lead-in
+taper of the lips, `lead_in_h` is taller than the lips, `lip_h_frac` is outside 0.50 – 1.00, or the
+bed chamfer is larger than the thinnest wall. `echo` prints a
 dimension summary on every render.
 
 - **Port on the other side?** `port_side` is as seen standing in front of the
   mounted holder, facing the battery. The model mirrors the opening and its
   collar to the other wall.
-- **Slimmer variant:** `wall_back = 6`, `wall_floor = 6`, `capture_frac = 0.50`
-  saves roughly 15 % of the filament and still passes every check — the
-  countersink needs only 2.4 mm of the 6 mm plate, and 190 mm is exactly half
-  the battery height.
+- **Slimmer variant:** `capture_frac = 0.35` (133 mm) is the lowest the model
+  accepts — anything below fails the capture-height check.
 
 ## Printing
 
