@@ -1,0 +1,17 @@
+# Generated exports
+exports/
+*.stl
+*.3mf
+*.amf
+*.off
+*.gcode
+*.bgcode
+
+# OpenSCAD backups
+*.scad~
+*.bak
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,21 @@
+{
+  "files.associations": {
+    "*.scad": "scad"
+  },
+  "files.exclude": {
+    "**/exports": false
+  },
+  "search.exclude": {
+    "libs/**": true,
+    "**/exports/**": true
+  },
+  "terminal.integrated.env.osx": {
+    "OPENSCADPATH": "${workspaceFolder}/libs"
+  },
+  "terminal.integrated.env.linux": {
+    "OPENSCADPATH": "${workspaceFolder}/libs"
+  },
+  "terminal.integrated.env.windows": {
+    "OPENSCADPATH": "${workspaceFolder}\\libs"
+  }
+}
