@@ -3,8 +3,8 @@
 // =====================================================================
 //  A thick-walled U-channel cradle: wall-facing back plate, two side
 //  walls, a load-bearing floor shelf, and two front retaining lips.
-//  The side walls and the back plate are cut with a honeycomb to save
-//  filament.
+//  The side walls, the back plate and the lips are cut with a honeycomb
+//  to save filament.
 //  The battery drops in from the top and rests on the floor.
 //
 //  Designed primarily for the Bafang BT F08.600.C (600 Wh) battery;
@@ -147,29 +147,13 @@ port_boss_t      = 2.5;    // [0.5:0.5:10]
 // Radial width of the collar, mm
 port_boss_w      = 5.0;    // [1:0.5:15]
 
-/* [Strap slots] */
-// Optional pair of slots through the front lips for a hook-and-loop
-// strap across the battery face — cheap insurance on a 4 kg pack.
-// Cut the strap slots
-strap_enable   = true;
-// Z — slot height (strap width), mm
-strap_h        = 25.0;  // [10:0.5:50]
-// X — slot width (strap thickness + slack), mm
-strap_t        = 4.0;   // [1:0.5:10]
-// Slot centre heights from the bottom of the part, mm ([] = auto: one row near the top)
-strap_z_rows   = [];
-// Auto row: distance of the slot centre below the top of the lips, mm
-strap_z_margin = 45;    // [20:1:200]
-// Minimum lip material left on each side of a slot, mm
-strap_rim_min  = 3;     // [1:0.5:10]
-// Minimum gap between a slot and the top lead-in taper, mm
-strap_lead_in_gap = 5;  // [0:1:30]
-
 /* [Honeycomb] */
 // Cut a honeycomb through both side walls to save filament
 hex_sides   = true;
 // Cut a honeycomb through the back plate (clear of the screws)
 hex_back    = true;
+// Cut a honeycomb through both front retaining lips
+hex_lips    = true;
 // Centre-to-centre spacing of the hexagonal cells, mm
 hex_spacing = 14;    // [8:0.5:40]
 // Material left between neighbouring cells, mm
@@ -254,11 +238,6 @@ screw_z = len(screw_z_rows) > 0
   ? screw_z_rows
   : [ pocket_z0 + screw_z_margin, total_h - screw_z_margin ];
 
-// Strap slot rows
-strap_z = len(strap_z_rows) > 0
-  ? strap_z_rows
-  : [ lip_top - strap_z_margin ];
-
 // Port centre, converted from battery-referenced to part coordinates
 port_cy = wall_back  + port_from_back;
 port_cz = wall_floor + port_from_bottom;
@@ -273,7 +252,7 @@ collar_tip = min((collar_d / 2) / sin(overhang_angle), port_cz);
 // the roof of each cell is a short bridge and its slanted edges sit 30° off
 // vertical, so no supports are needed.
 min_line = 0.45;                                   // one extrusion line, see docs/print-setup.md
-hex_any  = hex_sides || hex_back;
+hex_any  = hex_sides || hex_back || hex_lips;
 hex_r    = (hex_spacing - hex_strut) / sqrt(3);    // cell circumradius
 hex_keep = port_boss ? collar_d / 2 : port_d / 2 + min_web;
 hex_min_piece = 2;   // shallowest partial cell kept, mm — avoids thin hole slivers
@@ -323,6 +302,12 @@ hex_screw_keeps = [ for (dx = screw_x_offsets, cz = screw_z)
 hex_cells_back  = hex_back
   ? hex_clear_of(hex_cells_in(hex_back_rect), hex_screw_keeps)
   : [];
+// Front lips, in (x, z): inside the side-wall joint, the free edge, the floor
+// and the lip lead-in taper
+hex_lip_rects = [ for (x0 = [pocket_x0, pocket_x1 - lip_w])
+                    [x0 + hex_frame, x0 + lip_w - hex_frame,
+                     wall_floor + hex_frame, lip_top - lead_in_h - hex_frame] ];
+hex_cells_lips = [ for (rc = hex_lip_rects) hex_lips ? hex_cells_in(rc) : [] ];
 
 // =====================================================================
 //  Sanity checks
@@ -352,9 +337,8 @@ if (hex_any) {
   assert(hex_frame >= min_web, "hex_frame must be at least min_web");
 }
 assert(2 * fillet_r < min(wall_side, wall_back, wall_floor, lip_t,
-                          strap_enable ? (lip_w - strap_t) / 2 : lip_w,
                           port_boss ? port_boss_w : wall_side),
-  "fillet_r too large: it must be under half the thinnest wall, lip, strap rim and collar");
+  "fillet_r too large: it must be under half the thinnest wall, lip and collar");
 assert(lead_in_h < capture_h, "lead_in_h taller than the holder");
 assert(lead_in_h < lip_h, "lead_in_h taller than the front lips");
 assert(lip_h_frac >= lip_h_frac_min && lip_h_frac <= lip_h_frac_max,
@@ -373,18 +357,6 @@ if (port_enable) {
     "port_side must be \"left\" or \"right\"");
   assert(!port_boss || port_cz >= collar_d / 2,
     "port collar would dip below the bed — raise port_from_bottom or reduce port_boss_w");
-}
-
-if (strap_enable) {
-  assert(strap_t + 2 * strap_rim_min < lip_w,
-    "strap slot too wide for the lip — reduce strap_t");
-  for (sz = strap_z) {
-    assert(sz - strap_h / 2 > pocket_z0, "strap slot below the pocket floor");
-    assert(sz + strap_h / 2 < lip_top - strap_rim_min,
-      "strap slot runs past the top of the lips — increase strap_z_margin or lip_h_frac");
-    assert(sz + strap_h / 2 < lip_top - lead_in_h - strap_lead_in_gap,
-      "strap slot runs into the lead-in taper of the lips — increase strap_z_margin");
-  }
 }
 
 // =====================================================================
@@ -412,6 +384,7 @@ echo(str("screw embedment   : ", screw_len - wall_back, " mm into the wall"));
 if (hex_any)
   echo(str("honeycomb         : sides ", len(hex_cells_plain), " cells (port side ",
            len(hex_cells_port), "), back ", len(hex_cells_back),
+           ", lips ", len(hex_cells_lips[0]), " + ", len(hex_cells_lips[1]),
            " cells, cell r = ", round(hex_r * 100) / 100, " mm"));
 if (port_enable)
   echo(str("port centre       : ", port_side, " wall, y=", port_cy,
@@ -614,16 +587,7 @@ module port_cut() {
     }
 }
 
-// Strap slots through both front lips (each one grown by fr before rounding).
-module strap_cuts() {
-  if (strap_enable)
-    for (sz = strap_z, xc = [pocket_x0 + lip_w / 2, pocket_x1 - lip_w / 2])
-      grown(fr)
-        translate([xc - strap_t / 2, pocket_y1 - overshoot, sz - strap_h / 2])
-          box([strap_t, lip_t + 2 * overshoot, strap_h]);
-}
-
-// Honeycomb through the side walls and the back plate. Each cell is grown by
+// Honeycomb through the side walls, the back plate and the lips. Each cell is grown by
 // fr (delta offset: after the rounding the hexagon comes back exact, with
 // filleted rims).
 module hex_cells_2d(pts) {
@@ -664,6 +628,12 @@ module hex_cuts() {
     translate([0, wall_back / 2, 0]) rotate([90, 0, 0])
       linear_extrude(height = wall_back + 2 * (overshoot + fr), center = true)
         hex_pattern_2d(hex_cells_back, hex_back_rect, hex_screw_keeps);
+  // front lips: 2D (x, z), extruded along Y through each lip
+  if (hex_lips)
+    for (i = [0, 1])
+      translate([0, pocket_y1 + lip_t / 2, 0]) rotate([90, 0, 0])
+        linear_extrude(height = lip_t + 2 * (overshoot + fr), center = true)
+          hex_pattern_2d(hex_cells_lips[i], hex_lip_rects[i], []);
 }
 
 // ---------------------------------------------------------------------
@@ -702,7 +672,7 @@ module repaint_parts() {
     children();
 }
 
-// Lead-in and strap cuts happen before the rounding so their edges get
+// Lead-in and honeycomb cuts happen before the rounding so their edges get
 // filleted too; screw holes, the port (already rim-chamfered) and the bed
 // chamfer are cut afterwards to keep their exact shape.
 module holder() {
@@ -713,7 +683,6 @@ module holder() {
         paint(col_cuts) {
           grown(fr) lead_in_cut();
           grown(fr) lip_lead_in_cut();
-          strap_cuts();
           hex_cuts();
         }
       }
