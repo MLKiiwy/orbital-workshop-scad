@@ -1,8 +1,11 @@
 # Bike battery wall holder
 
-> Wall-mounted drop-in cradle for a 92 × 91 × 380 mm, 4 kg e-bike battery, with an opening that keeps its charging port reachable.
+> Wall-mounted drop-in cradle for a 92 × 91 × 380 mm, 4 kg e-bike battery (Bafang BT F08.600.C, 600 Wh), with an opening that keeps its charging port reachable.
 
 ## What
+
+Designed primarily for the **Bafang BT F08.600.C (600 Wh)** e-bike battery.
+Other packs of similar size fit by changing the `battery_*` parameters.
 
 A thick-walled U-channel cradle screwed to the wall. The battery drops in from
 the top and rests on a floor shelf; two side walls and two front lips hold it on
@@ -31,7 +34,7 @@ face.
 
 | | Value |
 |---|---|
-| Battery | 92 (W) × 91 (D) × 380 (H) mm, 4 kg |
+| Battery | Bafang BT F08.600.C, 600 Wh — 92 (W) × 91 (D) × 380 (H) mm, 4 kg |
 | Pocket | 94.4 × 92.5 mm (1.2 mm side slack per side, 1.5 mm front) |
 | Outside envelope | 102.4 (W) × 102.5 (D) × 158 (H) mm |
 | Battery captured | 152 mm — 40 % of its height |
