@@ -52,6 +52,8 @@ floor or a shelf gets knocked over. The goals that drove the design:
   of the pocket guides the battery in.
 - **Charge in place** — the side opening lines up with the battery's charging port.
 - **Hold at least 35 % of the battery height** (40 % by default) so it cannot tip out of the cradle.
+- **Nothing sharp to the touch** — every exposed edge gets a small fillet
+  (`fillet_r`), and the dimensions stay nominal.
 - **Carry 4 kg on a wall safely** — the weight sits on a thick floor shelf and
   the back plate is screwed to the wall with four countersunk screws.
 - **Print without supports** in PETG on a Bambu Lab printer.
@@ -131,6 +133,10 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `strap_z_margin` | 45 | Auto row: distance of the slot centre below the top of the lips |
 | `strap_rim_min` | 3 | Minimum lip material left on each side of a slot |
 | `strap_lead_in_gap` | 5 | Minimum gap between a slot and the lead-in taper of the lips |
+| **Edge rounding** | | |
+| `fillet_r` | 1.0 | Fillet radius on every exposed edge, 0 = sharp (bed-facing edges keep `bed_chamfer`) |
+| `fillet_fn` | 16 | Facets of the rounding sphere (higher = smoother, slower render) |
+| `fillet_preview` | false | Also round in preview (slow); off = fast, sharp preview with per-part colors |
 | **Printing** | | |
 | `bed_chamfer` | 0.6 | Chamfer on the bed-facing outer edges (elephant-foot relief) |
 | `overhang_angle` | 45 | Max unsupported overhang of your printer — shapes the teardrop port and collar, degrees |
@@ -140,9 +146,22 @@ The model `assert`s its own consistency: it refuses to render if the
 countersink no longer fits the back plate, the port opening would break into
 the floor/back plate or run past the lips, the lips overlap, the front window
 gets too narrow to drive a screw through, a strap slot runs into the lead-in
-taper of the lips, `lead_in_h` is taller than the lips, `lip_h_frac` is outside 0.50 – 1.00, or the
-bed chamfer is larger than the thinnest wall. `echo` prints a
+taper of the lips, `lead_in_h` is taller than the lips, `lip_h_frac` is outside 0.50 – 1.00, the
+bed chamfer is larger than the thinnest wall, or `fillet_r` is not under half
+of the thinnest wall, lip, strap rim or collar. `echo` prints a
 dimension summary on every render.
+
+**How the fillet works:** every part is modelled `fillet_r` smaller on each
+exposed face, the lead-in and strap cuts `fillet_r` larger, then a Minkowski sum
+with a sphere grows everything back. All exposed edges come out rounded and
+inside corners stay sharp. The outside dimensions stay nominal to within the
+sphere's facet error (≈ 0.02 mm). Screw holes, the port and the bed chamfer
+are cut afterwards, so they keep their exact geometry. The rounding is skipped
+in preview unless `fillet_preview = true`; the export takes about 5 s. The
+Minkowski step drops colors, so with `use_colors` on, the rounded body is
+split back along the part boundaries and repainted. The VS Code OpenSCAD
+Preview extension renders through a full 3MF export, so it always shows the
+rounded version.
 
 - **Port on the other side?** `port_side` is as seen standing in front of the
   mounted holder, facing the battery. The model mirrors the opening and its

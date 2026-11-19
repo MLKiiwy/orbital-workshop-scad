@@ -159,6 +159,14 @@ strap_rim_min  = 3;     // [1:0.5:10]
 // Minimum gap between a slot and the top lead-in taper, mm
 strap_lead_in_gap = 5;  // [0:1:30]
 
+/* [Edge rounding] */
+// Fillet radius on every exposed edge (0 = sharp). Bed-facing edges keep bed_chamfer, mm
+fillet_r       = 1.0;   // [0:0.1:1.9]
+// Facets of the rounding sphere (higher = smoother, much slower render)
+fillet_fn      = 16;    // [8:4:48]
+// Also round in preview (slow); off = fast, sharp, per-part colors
+fillet_preview = false;
+
 /* [Printing] */
 // Chamfer on the bed-facing outer edges (elephant-foot relief), mm
 bed_chamfer    = 0.6;   // [0:0.1:3]
@@ -180,6 +188,9 @@ capture_step = 0.1;  // rounding step for the derived capture height
 capture_frac_min = 0.35; // smallest share of the battery height the holder may wrap
 lip_h_frac_min   = 0.50; // lip height limits, as a share of the pocket height
 lip_h_frac_max   = 1.00;
+// Effective fillet radius: the slow Minkowski rounding is skipped in preview
+// unless asked for.
+fr = ($preview && !fillet_preview) ? 0 : fillet_r;
 ghost_wall_t = 15;   // thickness of the preview wall slab
 ghost_margin = 20;   // how far the preview wall extends past the part
 
@@ -256,6 +267,11 @@ assert(window_w > screw_head_d + driver_access,
 assert(len(screw_z) >= 2, "need at least two screw rows");
 assert(bed_chamfer < min(wall_side, wall_back, wall_floor, lip_t),
   "bed_chamfer larger than the thinnest wall");
+assert(fillet_r >= 0, "fillet_r must not be negative");
+assert(2 * fillet_r < min(wall_side, wall_back, wall_floor, lip_t,
+                          strap_enable ? (lip_w - strap_t) / 2 : lip_w,
+                          port_boss ? port_boss_w : wall_side),
+  "fillet_r too large: it must be under half the thinnest wall, lip, strap rim and collar");
 assert(lead_in_h < capture_h, "lead_in_h taller than the holder");
 assert(lead_in_h < lip_h, "lead_in_h taller than the front lips");
 assert(lip_h_frac >= lip_h_frac_min && lip_h_frac <= lip_h_frac_max,
@@ -340,6 +356,24 @@ module x_teardrop(x0, len, cy, cz, d1, d2, cap1, cap2, down = false) {
                ang = overhang_angle, spin = -90, anchor = FWD);
 }
 
+// Rounds every convex edge of the children by `r` (Minkowski with a sphere).
+// The children must already be eroded by `r` so the result keeps its size.
+module rounded(r) {
+  if (r > 0)
+    minkowski() { children(); sphere(r = r, $fn = fillet_fn); }
+  else
+    children();
+}
+
+// Grows a convex cutter by `r` on every side, the counterpart of the erosion
+// above: cut, then round, and the opening ends up exactly at its nominal size.
+module grown(r) {
+  if (r > 0)
+    minkowski() { children(); sphere(r = r, $fn = fillet_fn); }
+  else
+    children();
+}
+
 // Mirrors children to the right-hand wall when port_side == "right".
 module on_port_side() {
   if (port_side == "right")
@@ -354,25 +388,36 @@ module on_port_side() {
 
 // The four parts only touch face to face (no overlap), so their preview
 // colors never z-fight on shared outer faces.
+// Every exposed face is pulled in by `fr` (the bed face excepted); the
+// final Minkowski rounding pushes it back out, so the nominal dimensions hold.
 module back_plate() {
-  box([total_w, wall_back, total_h]);
+  translate([fr, fr, 0])
+    box([total_w - 2 * fr, wall_back - 2 * fr, total_h - fr]);
 }
 
 module floor_shelf() {
-  translate([0, wall_back, 0])
-    box([total_w, total_d - wall_back, wall_floor]);
+  translate([fr, wall_back - fr, 0])
+    box([total_w - 2 * fr, total_d - wall_back, wall_floor - fr]);
 }
 
 module side_walls() {
-  for (x = [0, total_w - wall_side])
-    translate([x, wall_back, wall_floor])
-      box([wall_side, total_d - wall_back, total_h - wall_floor]);
+  for (x = [fr, total_w - wall_side + fr])
+    translate([x, wall_back - fr, wall_floor - fr])
+      box([wall_side - 2 * fr, total_d - wall_back, total_h - wall_floor]);
 }
 
 module front_lips() {
-  for (x = [pocket_x0, pocket_x1 - lip_w])
-    translate([x, pocket_y1, wall_floor])
-      box([lip_w, lip_t, lip_h]);
+  for (x = [pocket_x0 - fr, pocket_x1 - lip_w + fr])
+    translate([x, pocket_y1 + fr, wall_floor - fr])
+      box([lip_w, lip_t - 2 * fr, lip_h]);
+}
+
+// Removes what the rounding pushes below the bed, leaving a flat bottom.
+module below_bed_cut() {
+  o = overshoot;
+  if (fr > 0)
+    translate([-(fr + o), -(fr + o), -(fr + o)])
+      box([total_w + 2 * (fr + o), total_d + 2 * (fr + o), fr + o]);
 }
 
 // Ring cutter that chamfers the bed-facing outer edges: a slab just under the
@@ -395,10 +440,12 @@ module bed_chamfer_cut() {
 // Collar around the port opening. Teardrop pointing down so its underside
 // stays within the overhang limit instead of a flat cantilevered ledge.
 module port_collar() {
+  // eroded by fr like the other parts; a tip resting on the bed stays there
+  tip = collar_tip >= port_cz ? port_cz : collar_tip - fr;
   if (port_enable && port_boss)
     on_port_side()
-      x_teardrop(port_x_out, wall_side - port_x_out, port_cy, port_cz,
-                 collar_d, collar_d, collar_tip, collar_tip, down = true);
+      x_teardrop(port_x_out + fr, wall_side - port_x_out - 2 * fr, port_cy, port_cz,
+                 collar_d - 2 * fr, collar_d - 2 * fr, tip, tip, down = true);
 }
 
 module holder_solid() {
@@ -480,28 +527,68 @@ module port_cut() {
     }
 }
 
-// Strap slots through both front lips.
+// Strap slots through both front lips (each one grown by fr before rounding).
 module strap_cuts() {
   if (strap_enable)
     for (sz = strap_z, xc = [pocket_x0 + lip_w / 2, pocket_x1 - lip_w / 2])
-      translate([xc - strap_t / 2, pocket_y1 - eps, sz - strap_h / 2])
-        box([strap_t, lip_t + 2 * eps, strap_h]);
+      grown(fr)
+        translate([xc - strap_t / 2, pocket_y1 - overshoot, sz - strap_h / 2])
+          box([strap_t, lip_t + 2 * overshoot, strap_h]);
 }
 
 // ---------------------------------------------------------------------
 //  Assembly
 // ---------------------------------------------------------------------
 
+// The Minkowski rounding drops colors, so the rounded body is split back
+// along the original part boundaries and each piece repainted (colors only;
+// skipped when use_colors is off, so plain exports are untouched).
+module repaint_parts() {
+  big = total_w + total_d + total_h;           // reaches past the whole part
+  module region(x0, x1, y0, y1, z0, z1) {
+    translate([x0, y0, z0]) box([x1 - x0, y1 - y0, z1 - z0]);
+  }
+  if (use_colors && fr > 0) {
+    // back plate: everything behind the pocket
+    paint(col_back) intersection() {
+      children(); region(0, total_w, -big, wall_back, -big, big); }
+    // floor shelf: below the pocket floor, in front of the back plate
+    paint(col_floor) intersection() {
+      children(); region(0, total_w, wall_back, big, -big, wall_floor); }
+    // side walls
+    for (xr = [[0, pocket_x0], [pocket_x1, total_w]])
+      paint(col_sides) intersection() {
+        children(); region(xr[0], xr[1], wall_back, big, wall_floor, big); }
+    // front lips
+    paint(col_lips) intersection() {
+      children(); region(pocket_x0, pocket_x1, pocket_y1, big, wall_floor, big); }
+    // port collar, outside the side walls
+    for (xr = [[-big, 0], [total_w, big]])
+      paint(col_collar) intersection() {
+        children(); region(xr[0], xr[1], -big, big, -big, big); }
+  } else
+    children();
+}
+
+// Lead-in and strap cuts happen before the rounding so their edges get
+// filleted too; screw holes, the port (already rim-chamfered) and the bed
+// chamfer are cut afterwards to keep their exact shape.
 module holder() {
   difference() {
-    holder_solid();
+    repaint_parts() rounded(fr)
+      difference() {
+        holder_solid();
+        paint(col_cuts) {
+          grown(fr) lead_in_cut();
+          grown(fr) lip_lead_in_cut();
+          strap_cuts();
+        }
+      }
     paint(col_cuts) {
-      lead_in_cut();
-      lip_lead_in_cut();
       mount_holes();
       port_cut();
-      strap_cuts();
       bed_chamfer_cut();
+      below_bed_cut();
     }
   }
 }
