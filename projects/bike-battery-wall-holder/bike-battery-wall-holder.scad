@@ -5,6 +5,9 @@
 //  walls, a load-bearing floor shelf, and two front retaining lips.
 //  The battery drops in from the top and rests on the floor.
 //
+//  Designed primarily for the Bafang BT F08.600.C (600 Wh) battery;
+//  other packs fit by changing the [Battery] parameters.
+//
 //  Coordinate system (origin = back / left / bottom outer corner):
 //    +X : left  -> right  (as seen standing in front of the holder)
 //    +Y : wall  -> front
@@ -51,6 +54,7 @@ col_cuts   = "Crimson";
 col_ghost  = [0.6, 0.8, 1.0, 0.35];
 
 /* [Battery] */
+// Defaults: Bafang BT F08.600.C, 600 Wh.
 // X — battery width (left <-> right), mm
 battery_w = 92;    // [40:0.5:200]
 // Y — battery depth (wall <-> front), mm
