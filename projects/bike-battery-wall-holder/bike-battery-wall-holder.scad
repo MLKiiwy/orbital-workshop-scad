@@ -118,8 +118,8 @@ screw_head_angle = 90;    // [60:1:120]
 screw_head_sink  = 0.4;   // [0:0.1:3]
 // Screw length, mm (informational — echoes the embedment depth)
 screw_len        = 40;    // [20:1:120]
-// Screw grid X offsets, measured from the pocket centre line, mm
-screw_x_offsets = [-22, 22];
+// Screw grid X offsets, measured from the pocket centre line, mm ([0] = one column on the centre line)
+screw_x_offsets = [0];
 // Screw grid Z heights from the bottom of the part, mm ([] = auto: one low, one high row)
 screw_z_rows    = [];
 // Auto rows: distance from the floor top / from the part top, mm

@@ -19,13 +19,13 @@ joint and around the port and the screws.
         front view                       side view (port side)
    ┌──┬───────────────┬──┐          ┌──────────────┐
    │  │               │  │          │              │  ← back plate
-   │  │   ◦       ◦   │  │ ← screws │              │     (against wall)
+   │  │       ◦       │  │ ← screw  │              │     (against wall)
    │  │               │  │          │              │
    │▓▓│               │▓▓│          │              │
    │▓▓│               │▓▓│          │     ┌────┐   │
    │▓▓│               │▓▓│          │    │ ⌀35 │   │  ← charging port
    │▓▓│               │▓▓│          │     ╲  ╱     │     (teardrop collar)
-   │▓▓│   ◦       ◦   │▓▓│ ← screws │       ╲╱     │
+   │▓▓│       ◦       │▓▓│ ← screw  │       ╲╱     │
    │▓▓└───────────────┘▓▓│          └──────────────┘
    └─────────────────────┘             floor shelf
      ▓ = front retaining lip, from the floor up to 70 % of the pocket height
@@ -41,10 +41,10 @@ joint and around the port and the screws.
 | Battery captured | 152 mm — 40 % of its height |
 | Back plate / side walls / floor | 5 / 4 / 6 mm |
 | Front lips | 20 mm reach, 5 mm thick, 106.4 mm tall (70 % of the pocket), 54.4 mm open window between them |
-| Screw pattern | 44 mm apart in X, 92 mm apart in Z |
+| Screw pattern | 2 screws on the centre line of the back plate, 92 mm apart in Z |
 | Charging port | ⌀35 mm, centre 30 mm from the battery's back face and 30 mm from its bottom face |
 | Honeycomb | 14 mm cells, 3 mm struts, 3 mm solid frame, partial cells along the frame — 88 cells on the plain side wall, 81 on the port wall, 88 on the back plate, 16 on each lip |
-| Solid volume | ≈ 167 cm³ (206 cm³ with whole cells only, 275 cm³ without the honeycomb; ≈ 170 g PETG with the settings below, scaled from an earlier slice) |
+| Solid volume | ≈ 166 cm³ (206 cm³ with whole cells only, 275 cm³ without the honeycomb; ≈ 170 g PETG with the settings below, scaled from an earlier slice) |
 
 The port centre is specified relative to the **battery**; the model adds
 `wall_back` and `wall_floor`, so in part coordinates the hole centre lands at
@@ -69,7 +69,8 @@ floor or a shelf gets knocked over. The goals that drove the design:
 - **Nothing sharp to the touch** — every exposed edge gets a small fillet
   (`fillet_r`), and the dimensions stay nominal.
 - **Carry 4 kg on a wall safely** — the weight sits on a thick floor shelf and
-  the back plate is screwed to the wall with four countersunk screws.
+  the back plate is screwed to the wall with two countersunk screws on its
+  centre line.
 - **Print without supports** in PETG on a Bambu Lab printer.
 
 ## Parameters
@@ -125,7 +126,7 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `screw_head_angle` | 90 | Included angle of the conical head, degrees |
 | `screw_head_sink` | 0.4 | Extra recess so the head sits below the pocket face |
 | `screw_len` | 40 | Screw length (informational — echoes the embedment depth) |
-| `screw_x_offsets` | `[-22, 22]` | Screw columns, measured from the pocket centre line |
+| `screw_x_offsets` | `[0]` | Screw columns, measured from the pocket centre line (`[0]` = one column on the centre line) |
 | `screw_z_rows` | `[]` | Screw row heights from the part bottom (`[]` = auto, one low and one high row) |
 | `screw_z_margin` | 30 | Auto rows: distance from the floor top / from the part top |
 | `driver_access` | 8 | Extra window width beyond the head needed to reach the screws with a driver |
@@ -236,21 +237,23 @@ earlier, larger version — re-slice to confirm).
 
 | Qty | Item | Notes |
 |-----|------|-------|
-| 4 | Countersunk wood/masonry screw, 4.0 × 40 mm, TX-20 | 35 mm embedment through the 5 mm back plate |
-| 4 | 6 mm nylon wall plug | Masonry only; on plasterboard hit a stud or use hollow-wall anchors rated > 10 kg each |
+| 2 | Countersunk wood/masonry screw, 4.0 × 40 mm, TX-20 | 35 mm embedment through the 5 mm back plate |
+| 2 | 6 mm nylon wall plug | Masonry only; on plasterboard hit a stud or use hollow-wall anchors rated > 10 kg each |
 
 ### Mounting
 
 The countersinks open **into the pocket**, so the heads finish flush with the
-inner face of the back plate and never push the battery forward. Drive the four
+inner face of the back plate and never push the battery forward. Drive the two
 screws from inside the cradle, through the 54.4 mm window between the lips,
 before putting the battery in.
 
 Load check: the battery's centre of mass sits ~50.5 mm off the wall
 (`wall_back` + half the battery depth), so 4 kg (≈ 39 N) produces about
 2.0 N·m of tipping moment. Across the 92 mm vertical screw spacing that is
-~22 N of pull-out shared by the top pair, plus ~39 N of vertical shear shared
-by all four — a fraction of what 4.0 × 40 screws carry.
+~22 N of pull-out on the top screw, plus ~39 N of vertical shear shared by
+both — a fraction of what a 4.0 × 40 screw carries. With a single column the
+holder can pivot slightly around the screw line if the wall is uneven; snug
+the screws firmly.
 
 **The fasteners, not the plastic, are the weak link.** Into plasterboard,
 4.0 × 40 screws alone will *not* hold 4 kg on a 50 mm lever arm.
