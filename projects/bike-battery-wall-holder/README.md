@@ -15,14 +15,16 @@ face.
         front view                       side view (port side)
    ┌──┬───────────────┬──┐          ┌──────────────┐
    │  │               │  │          │              │  ← back plate
-   │▓▓│               │▓▓│          │              │     (against wall)
+   │  │   ◦       ◦   │  │ ← screws │              │     (against wall)
+   │  │               │  │          │              │
+   │▓▓│               │▓▓│          │              │
    │▓▓│   ▭ strap     │▓▓│          │     ┌────┐   │
    │▓▓│     slots     │▓▓│          │    │ ⌀35 │   │  ← charging port
-   │  │               │  │          │     ╲  ╱     │     (teardrop collar)
-   │  │   ◦       ◦   │  │ ← screws │       ╲╱     │
-   │  └───────────────┘  │          └──────────────┘
+   │▓▓│               │▓▓│          │     ╲  ╱     │     (teardrop collar)
+   │▓▓│   ◦       ◦   │▓▓│ ← screws │       ╲╱     │
+   │▓▓└───────────────┘▓▓│          └──────────────┘
    └─────────────────────┘             floor shelf
-     ▓ = front retaining lip
+     ▓ = front retaining lip, from the floor up to 70 % of the pocket height
 ```
 
 ### Key dimensions (defaults)
@@ -37,11 +39,11 @@ face.
 | Front lips | 20 mm reach, 5 mm thick, 106.4 mm tall (70 % of the pocket), 54.4 mm open window between them |
 | Screw pattern | 44 mm apart in X, 92 mm apart in Z |
 | Charging port | ⌀35 mm, centre 30 mm from the battery's back face and 30 mm from its bottom face |
-| Solid volume | ≈ 498 cm³ (≈ 505 g PETG as sliced below) |
+| Solid volume | ≈ 269 cm³ (≈ 275 g PETG with the settings below, scaled from an earlier slice) |
 
 The port centre is specified relative to the **battery**; the model adds
 `wall_back` and `wall_floor`, so in part coordinates the hole centre lands at
-y = 38 mm from the wall face and z = 38 mm from the bottom of the piece.
+y = 35 mm from the wall face and z = 36 mm from the bottom of the piece.
 
 ## Why
 
@@ -49,7 +51,7 @@ The battery has to come off the bike to charge, and a 4 kg pack lying on the
 floor or a shelf gets knocked over. The goals that drove the design:
 
 - **Drop in / lift out with one hand** — no latch; a lead-in chamfer at the top
-  of the pocket guides the battery in.
+  of the pocket and of the lips guides the battery in.
 - **Charge in place** — the side opening lines up with the battery's charging port.
 - **Hold at least 35 % of the battery height** (40 % by default) so it cannot tip out of the cradle.
 - **Nothing sharp to the touch** — every exposed edge gets a small fillet
@@ -73,13 +75,13 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `show_wall` | false | Ghost wall slab behind the back plate |
 | `show_screws` | false | Ghost screws, to check head seating |
 | **Preview colors** | | |
-| `use_colors` | true | Color the parts in preview (never written to the STL) |
+| `use_colors` | true | Color the parts in preview and 3MF (never written to the STL) |
 | `col_back` | `"SteelBlue"` | Back plate |
 | `col_sides` | `"SeaGreen"` | Side walls |
 | `col_floor` | `"DarkOrange"` | Floor shelf |
 | `col_lips` | `"Gold"` | Front retaining lips |
 | `col_collar` | `"MediumPurple"` | Charging-port collar |
-| `col_cuts` | `"Crimson"` | Faces exposed by holes, slots, lead-in and bed chamfer |
+| `col_cuts` | `"Crimson"` | Faces exposed by screw holes, port and bed chamfer (also slots and lead-in when not rounded) |
 | `col_ghost` | `[0.6, 0.8, 1.0, 0.35]` | Ghost battery / wall / screws (RGBA) |
 | **Battery** | | |
 | `battery_w` | 92 | Battery width, X (left ↔ right) |
@@ -90,9 +92,9 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `clear_side` | 1.2 | Slack per side between battery and side wall |
 | `clear_front` | 1.5 | Slack between battery front face and the lips |
 | **Shell thickness** | | |
-| `wall_back` | 8.0 | Back plate (must fit the screw countersink) |
-| `wall_side` | 5.0 | Side walls |
-| `wall_floor` | 8.0 | Floor shelf — carries the full battery weight |
+| `wall_back` | 5.0 | Back plate (must fit the screw countersink) |
+| `wall_side` | 4.0 | Side walls |
+| `wall_floor` | 6.0 | Floor shelf — carries the full battery weight |
 | **Capture height** | | |
 | `capture_frac` | 0.40 | Fraction of the battery height the holder wraps (≥ 0.35) |
 | `capture_h_override` | 0 | Explicit capture height (0 = derive from `capture_frac`) |
@@ -183,18 +185,19 @@ layers apart.
 - Infill / walls: 40 % gyroid / 5 wall loops (≈ 2.0 mm), 6 top / bottom layers
 - Supports: none — the port is a flat-topped teardrop (short bridge) and its
   collar points down at `overhang_angle`
-- Brim: 5 mm (217 mm tall part)
+- Brim: 5 mm (158 mm tall part)
 - Temperatures: nozzle 245 °C / bed 80 °C
 - Part cooling: 30–50 % — favour layer adhesion over crispness
 - Outer wall speed: 30–40 mm/s
 
-Expect roughly 505 g of PETG and a long print (15–20 h).
+Expect roughly 275 g of PETG and an 8–11 h print (scaled from a slice of the
+earlier, larger version — re-slice to confirm).
 
 ## Hardware (BOM)
 
 | Qty | Item | Notes |
 |-----|------|-------|
-| 4 | Countersunk wood/masonry screw, 4.0 × 40 mm, TX-20 | 32 mm embedment through the 8 mm back plate |
+| 4 | Countersunk wood/masonry screw, 4.0 × 40 mm, TX-20 | 35 mm embedment through the 5 mm back plate |
 | 4 | 6 mm nylon wall plug | Masonry only; on plasterboard hit a stud or use hollow-wall anchors rated > 10 kg each |
 | 1 | Hook-and-loop strap, 25 mm wide | Optional, through the strap slots |
 
@@ -205,13 +208,14 @@ inner face of the back plate and never push the battery forward. Drive the four
 screws from inside the cradle, through the 54.4 mm window between the lips,
 before putting the battery in.
 
-Load check: the battery's centre of mass sits ~54 mm off the wall, so 4 kg
-(≈ 39 N) produces about 2.1 N·m of tipping moment. Across the 149 mm vertical
-screw spacing that is ~14 N of pull-out shared by the top pair, plus ~40 N of
-vertical shear shared by all four — a fraction of what 4.0 × 40 screws carry.
+Load check: the battery's centre of mass sits ~50.5 mm off the wall
+(`wall_back` + half the battery depth), so 4 kg (≈ 39 N) produces about
+2.0 N·m of tipping moment. Across the 92 mm vertical screw spacing that is
+~22 N of pull-out shared by the top pair, plus ~39 N of vertical shear shared
+by all four — a fraction of what 4.0 × 40 screws carry.
 
 **The fasteners, not the plastic, are the weak link.** Into plasterboard,
-4.0 × 40 screws alone will *not* hold 4 kg on a 54 mm lever arm.
+4.0 × 40 screws alone will *not* hold 4 kg on a 50 mm lever arm.
 
 The strap is not load-bearing, but it is cheap insurance against the pack
 being knocked forward.
@@ -233,7 +237,9 @@ Created 2026-11-19.
 Notes before the first print:
 
 - Geometry has been checked in renders (pocket clear of interference, port and
-  screw placement, lip taper) but not on a real battery.
+  screw placement, lip taper, edge fillets) but not on a real battery.
+- The volume, weight and print time above are estimates; re-slice the current
+  model in Bambu Studio for real figures.
 - Measure the battery first: the pocket assumes a true rectangular cuboid. If it
   has a tapered foot, a protruding latch, or rails on its back, add a relief
   cut-out or increase `clear_*`.
