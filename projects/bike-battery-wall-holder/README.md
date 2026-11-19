@@ -44,8 +44,8 @@ and the screws.
 | Front lips | 20 mm reach, 5 mm thick, 106.4 mm tall (70 % of the pocket), 54.4 mm open window between them |
 | Screw pattern | 44 mm apart in X, 92 mm apart in Z |
 | Charging port | ⌀35 mm, centre 30 mm from the battery's back face and 30 mm from its bottom face |
-| Honeycomb | 14 mm cells, 3 mm struts, 3 mm solid frame — 57 cells on the plain side wall, 42 on the port wall, 48 on the back plate |
-| Solid volume | ≈ 205 cm³ (274 cm³ without the honeycomb; ≈ 210 g PETG with the settings below, scaled from an earlier slice) |
+| Honeycomb | 14 mm cells, 3 mm struts, 3 mm solid frame, partial cells along the frame — 88 cells on the plain side wall, 81 on the port wall, 88 on the back plate |
+| Solid volume | ≈ 175 cm³ (205 cm³ with whole cells only, 274 cm³ without the honeycomb; ≈ 180 g PETG with the settings below, scaled from an earlier slice) |
 
 The port centre is specified relative to the **battery**; the model adds
 `wall_back` and `wall_floor`, so in part coordinates the hole centre lands at
@@ -65,7 +65,7 @@ floor or a shelf gets knocked over. The goals that drove the design:
 - **Save filament where it is not needed** — the side walls only tie the floor,
   back plate and lips together, and the back plate only needs solid material
   around the screws, so a honeycomb with a solid frame replaces the rest
-  (≈ 25 % less material).
+  (≈ 36 % less material).
 - **Nothing sharp to the touch** — every exposed edge gets a small fillet
   (`fillet_r`), and the dimensions stay nominal.
 - **Carry 4 kg on a wall safely** — the weight sits on a thick floor shelf and
@@ -153,6 +153,7 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `hex_spacing` | 14 | Centre-to-centre spacing of the hexagonal cells |
 | `hex_strut` | 3.0 | Material left between neighbouring cells |
 | `hex_frame` | 3 | Solid border kept around each pattern (wall joints, lead-in, port collar, screw heads) |
+| `hex_partial` | true | Also cut the partial cells along the border, so the pattern fills each wall fully |
 | **Edge rounding** | | |
 | `fillet_r` | 1.0 | Fillet radius on every exposed edge, 0 = sharp (bed-facing edges keep `bed_chamfer`) |
 | `fillet_fn` | 16 | Facets of the rounding sphere (higher = smoother, slower render) |
@@ -176,13 +177,20 @@ honeycomb cells per wall.
 
 **How the honeycomb works:** the cells are flat-top hexagons in the wall plane,
 so each cell roof is a short bridge (≈ 6.4 mm) and the slanted edges sit 30° off
-vertical — no supports. Only whole cells are cut: a cell is placed only if it
-fits inside its wall minus `hex_frame` — on the side walls from the floor, back
-plate, front edge and lead-in taper, and clear of the port collar; on the back
-plate from the side walls, the floor and the top, and clear of every screw
-head. Each pattern is centred on its area, and of the two possible lattice
-phases the one that fits more cells is used. The cells are cut before the edge
-rounding, so their rims are filleted too.
+vertical — no supports. Each wall has an area the pattern may use: the wall
+minus `hex_frame` — on the side walls from the floor, back plate, lips (measured
+from their inner face, so the lip joint stays solid) and lead-in taper, and
+clear of the port collar; on the back plate from the side walls, the floor and
+the top, and clear of every screw head. The keep-outs around the collar and
+the screws are teardrops pointing down, so cells under them get 45° roofs.
+With `hex_partial = true` the lattice is clipped to that area, so cut-off cells
+fill it right up to the frame; cells that would leave a hole shallower than
+2 mm are dropped to avoid slivers. With `hex_partial = false` only whole cells
+are cut. Each lattice is centred on its area, and of the two possible lattice
+phases the one that gives more cells is used. The cells are cut before the
+edge rounding, so their rims are filleted too. The export takes about 25 s;
+smaller cells (`hex_spacing` ≈ 10) multiply the cell count and make it much
+slower.
 
 **How the fillet works:** every part is modelled `fillet_r` smaller on each
 exposed face, the lead-in and strap cuts `fillet_r` larger, then a Minkowski sum
@@ -226,7 +234,7 @@ the shelf-to-wall joints, instead of peeling layers apart.
 - Brim: 5 mm (158 mm tall part)
 - Speeds: profile defaults (outer wall 60 mm/s)
 
-Expect roughly 210 g of PETG and a 6–9 h print (scaled from a slice of an
+Expect roughly 180 g of PETG and a 5–7 h print (scaled from a slice of an
 earlier, larger version — re-slice to confirm).
 
 ## Hardware (BOM)
