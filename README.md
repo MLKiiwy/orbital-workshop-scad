@@ -2,7 +2,7 @@
 
 A monorepo of my 3D modeling / 3D printing projects, written in [OpenSCAD](https://openscad.org).
 
-Every model is **parametric**: open it, tweak the parameters (in the code or in the
+Every model is **parametric** and fully metric (millimetres, SI units): open it, tweak the parameters (in the code or in the
 OpenSCAD Customizer), and export an STL/3MF for your printer.
 
 ## License
@@ -71,4 +71,4 @@ the OpenSCAD GUI and the command line.
 
 | Project | Description |
 |---------|-------------|
-| _none yet_ | |
+| [bike-battery-wall-holder](projects/bike-battery-wall-holder/) | Wall-mounted drop-in cradle for an e-bike battery, with charging-port access |
