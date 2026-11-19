@@ -3,6 +3,8 @@
 // =====================================================================
 //  A thick-walled U-channel cradle: wall-facing back plate, two side
 //  walls, a load-bearing floor shelf, and two front retaining lips.
+//  The side walls and the back plate are cut with a honeycomb to save
+//  filament.
 //  The battery drops in from the top and rests on the floor.
 //
 //  Designed primarily for the Bafang BT F08.600.C (600 Wh) battery;
@@ -96,7 +98,7 @@ lip_h_frac = 0.70; // [0.50:0.01:1.00]
 // Flares the pocket mouth so the battery slides in without fighting it.
 // The same Z/Y taper is repeated on the inner face of the front lips.
 // Z — chamfer height from the top edge (and from the lip top) down, mm
-lead_in_h = 15.0;  // [0.5:0.5:50]
+lead_in_h = 0.5;  // [0.5:0.5:50]
 // X — extra opening per side at the very top, mm
 lead_in_x = 2.0;   // [0:0.5:10]
 // Y — extra opening at the top of the pocket and of the lips (>= lip_t gives a knife edge), mm
@@ -162,6 +164,18 @@ strap_z_margin = 45;    // [20:1:200]
 strap_rim_min  = 3;     // [1:0.5:10]
 // Minimum gap between a slot and the top lead-in taper, mm
 strap_lead_in_gap = 5;  // [0:1:30]
+
+/* [Honeycomb] */
+// Cut a honeycomb through both side walls to save filament
+hex_sides   = true;
+// Cut a honeycomb through the back plate (clear of the screws)
+hex_back    = true;
+// Centre-to-centre spacing of the hexagonal cells, mm
+hex_spacing = 14;    // [8:0.5:40]
+// Material left between neighbouring cells, mm
+hex_strut   = 3.0;   // [1.5:0.1:10]
+// Solid border kept around each pattern (wall joints, lead-in, port collar, screw heads), mm
+hex_frame   = 3;     // [3:0.5:30]
 
 /* [Edge rounding] */
 // Fillet radius on every exposed edge (0 = sharp). Bed-facing edges keep bed_chamfer, mm
@@ -253,6 +267,50 @@ collar_d   = port_d + 2 * port_boss_w;
 // Downward teardrop tip of the collar, capped so it never dips below the bed
 collar_tip = min((collar_d / 2) / sin(overhang_angle), port_cz);
 
+// Honeycomb. Cells are flat-top hexagons in the wall plane (2D y = part Z):
+// the roof of each cell is a short bridge and its slanted edges sit 30° off
+// vertical, so no supports are needed.
+min_line = 0.45;                                   // one extrusion line, see docs/print-setup.md
+hex_any  = hex_sides || hex_back;
+hex_r    = (hex_spacing - hex_strut) / sqrt(3);    // cell circumradius
+hex_keep = port_boss ? collar_d / 2 : port_d / 2 + min_web;
+// Flat-top hexagon lattice: columns of cells, alternate columns shifted half a cell
+hex_grid_spacing = [hex_spacing * sqrt(3) / 2, hex_spacing / 2];
+// Whole cells inside the rectangle [u0,u1] x [v0,v1] of a wall's plane. The
+// lattice is centred on the rectangle and both stagger phases are tried; the
+// one that fits more cells wins.
+function hex_cells_in(u0, u1, v0, v1) =
+  let(w = u1 - u0 - 2 * hex_r, h = v1 - v0 - 2 * hex_r,
+      c = [(u0 + u1) / 2, (v0 + v1) / 2])
+  w <= 0 || h <= 0 ? []
+  : let(box = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]],
+        grid = function (st) [ for (m = grid_copies(spacing = hex_grid_spacing,
+                                                    size = [w + hex_spacing, h + hex_spacing],
+                                                    stagger = st, inside = box))
+                                 c + [m[0][3], m[1][3]] ],
+        a = grid(true), b = grid("alt"))
+    len(b) > len(a) ? b : a;
+// Cells whose centre is at least `clear` from every point in `keep`
+function hex_clear_of(cells, keep, clear) =
+  [ for (p = cells) if (len([ for (k = keep) if (norm(p - k) < clear) 1 ]) == 0) p ];
+// Side walls, in (y, z): clear of the back plate, the lips, the floor and the
+// lead-in; on the port wall also clear of the collar (or port rim)
+hex_cells_plain = hex_sides
+  ? hex_cells_in(wall_back + hex_frame, total_d - hex_frame,
+                 wall_floor + hex_frame, total_h - lead_in_h - hex_frame)
+  : [];
+hex_cells_port  = port_enable
+  ? hex_clear_of(hex_cells_plain, [[port_cy, port_cz]], hex_keep + hex_frame + hex_r)
+  : hex_cells_plain;
+// Back plate, in (x, z): between the side walls, above the floor, clear of
+// the screw heads
+hex_screws     = [ for (dx = screw_x_offsets, cz = screw_z) [centre_x + dx, cz] ];
+hex_cells_back = hex_back
+  ? hex_clear_of(hex_cells_in(pocket_x0 + hex_frame, pocket_x1 - hex_frame,
+                              wall_floor + hex_frame, total_h - hex_frame),
+                 hex_screws, screw_head_d / 2 + hex_frame + hex_r)
+  : [];
+
 // =====================================================================
 //  Sanity checks
 // =====================================================================
@@ -272,6 +330,14 @@ assert(len(screw_z) >= 2, "need at least two screw rows");
 assert(bed_chamfer < min(wall_side, wall_back, wall_floor, lip_t),
   "bed_chamfer larger than the thinnest wall");
 assert(fillet_r >= 0, "fillet_r must not be negative");
+if (hex_any) {
+  assert(hex_strut > 2 * fillet_r,
+    "hex_strut must be more than twice fillet_r, or the struts vanish");
+  assert(hex_strut >= 2 * min_line,
+    "hex_strut thinner than two extrusion lines");
+  assert(hex_spacing > hex_strut, "hex_spacing must be larger than hex_strut");
+  assert(hex_frame >= min_web, "hex_frame must be at least min_web");
+}
 assert(2 * fillet_r < min(wall_side, wall_back, wall_floor, lip_t,
                           strap_enable ? (lip_w - strap_t) / 2 : lip_w,
                           port_boss ? port_boss_w : wall_side),
@@ -330,6 +396,10 @@ echo(str("screw Z spacing   : ", max(screw_z) - min(screw_z), " mm"));
 echo(str("countersink depth : ", cs_depth + screw_head_sink,
          " mm of ", wall_back, " mm plate"));
 echo(str("screw embedment   : ", screw_len - wall_back, " mm into the wall"));
+if (hex_any)
+  echo(str("honeycomb         : sides ", len(hex_cells_plain), " cells (port side ",
+           len(hex_cells_port), "), back ", len(hex_cells_back),
+           " cells, cell r = ", round(hex_r * 100) / 100, " mm"));
 if (port_enable)
   echo(str("port centre       : ", port_side, " wall, y=", port_cy,
            " mm z=", port_cz, " mm (d=", port_d, " mm)"));
@@ -540,6 +610,30 @@ module strap_cuts() {
           box([strap_t, lip_t + 2 * overshoot, strap_h]);
 }
 
+// Honeycomb through the side walls and the back plate. Each cell is grown by
+// fr (delta offset: after the rounding the hexagon comes back exact, with
+// filleted rims).
+module hex_cells_2d(pts) {
+  offset(delta = fr)
+    for (c = pts) translate(c) hexagon(r = hex_r);
+}
+
+module hex_cuts() {
+  // side walls: 2D (y, z), extruded along X through the wall
+  side_len = wall_side + 2 * (overshoot + fr);
+  port_x   = port_side == "left" ? wall_side / 2 : total_w - wall_side / 2;
+  plain_x  = port_side == "left" ? total_w - wall_side / 2 : wall_side / 2;
+  if (hex_sides)
+    for (w = [[port_x, hex_cells_port], [plain_x, hex_cells_plain]])
+      translate([w[0], 0, 0]) rotate([90, 0, 90])
+        linear_extrude(height = side_len, center = true) hex_cells_2d(w[1]);
+  // back plate: 2D (x, z), extruded along Y through the plate
+  if (hex_back)
+    translate([0, wall_back / 2, 0]) rotate([90, 0, 0])
+      linear_extrude(height = wall_back + 2 * (overshoot + fr), center = true)
+        hex_cells_2d(hex_cells_back);
+}
+
 // ---------------------------------------------------------------------
 //  Assembly
 // ---------------------------------------------------------------------
@@ -560,14 +654,16 @@ module repaint_parts() {
     paint(col_floor) intersection() {
       children(); region(0, total_w, wall_back, big, -big, wall_floor); }
     // side walls
-    for (xr = [[0, pocket_x0], [pocket_x1, total_w]])
+    // the side-wall regions reach eps past the outer faces, so those faces
+    // are not claimed by the collar regions sharing the same plane
+    for (xr = [[-eps, pocket_x0], [pocket_x1, total_w + eps]])
       paint(col_sides) intersection() {
         children(); region(xr[0], xr[1], wall_back, big, wall_floor, big); }
     // front lips
     paint(col_lips) intersection() {
       children(); region(pocket_x0, pocket_x1, pocket_y1, big, wall_floor, big); }
     // port collar, outside the side walls
-    for (xr = [[-big, 0], [total_w, big]])
+    for (xr = [[-big, -eps], [total_w + eps, big]])
       paint(col_collar) intersection() {
         children(); region(xr[0], xr[1], -big, big, -big, big); }
   } else
@@ -586,6 +682,7 @@ module holder() {
           grown(fr) lead_in_cut();
           grown(fr) lip_lead_in_cut();
           strap_cuts();
+          hex_cuts();
         }
       }
     paint(col_cuts) {
