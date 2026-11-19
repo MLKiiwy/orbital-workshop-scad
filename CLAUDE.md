@@ -11,7 +11,12 @@ Monorepo of parametric OpenSCAD models for 3D printing. License: CC BY-NC-SA 4.0
 - When a project is added, add a row to the Projects table in the root `README.md`.
 
 ## Modeling rules
-- **OpenSCAD only.** Units are millimetres.
+- **OpenSCAD only.**
+- **Units — metric / SI, everywhere** (`.scad` files, READMEs, comments, echo output):
+  - Every dimension (length, diameter, offset, clearance, thickness) is in **millimetres**. No inches, no conversion factors, no other length unit in geometry.
+  - All other quantities use **SI units**: mass in kg (or g), force in N, torque in N·m, temperature in °C, time in s, volume in cm³ / mm³.
+  - Angles are in degrees (OpenSCAD's native unit, accepted for use with SI).
+  - Imperial units are not allowed. If a source spec is imperial (e.g. a ¼" bolt), convert it to mm and keep the original only as a comment.
 - **Parametric first:** every meaningful dimension is a top-level variable. No magic numbers in geometry.
   - Group parameters with Customizer sections `/* [Section] */` and annotate ranges/choices (`// [10:1:200]`, `// [round, square]`) with a short description comment above each.
   - Put derived values and internals after `/* [Hidden] */`.
