@@ -25,6 +25,7 @@ Monorepo of parametric OpenSCAD models for 3D printing. License: CC BY-NC-SA 4.0
 - **Use libraries, don't reinvent:** prefer BOSL2 (`include <../../libs/BOSL2/std.scad>`, plus e.g. `threading.scad`, `screws.scad`, `rounding.scad` as needed) for shapes, rounding/chamfers, attachments, threads, screws, gears, hinges. Include with a path **relative to the .scad file** so the VSCode preview and CLI both resolve it.
   - Need another library? Add it as a git submodule under `libs/` and document it in `libs/README.md` (name, URL, license, purpose). Check its license is compatible with CC BY-NC-SA use.
 - Small, named modules with parameters; the top level only composes them. Use `$fn`/`$fa`/`$fs` via parameters (low for preview, high for export — `$preview` helps).
+- **Target printer and material:** Bambu Lab H2D, 0.4 mm nozzle, SUNLU PETG High Speed Matte, unless the project says otherwise. [docs/print-setup.md](docs/print-setup.md) holds the design limits (build volume, wall and layer steps, clearances, heat) and the Bambu Studio profiles to name in a project README (usually `0.20mm Balanced Strength @BBL H2D` for mechanical parts, `0.16mm Balanced Quality @BBL H2D` for detailed models). Keep it updated when the printer, filament or profiles change.
 - **Printability:** model in print orientation when possible, avoid unsupported overhangs > 45°, respect minimum wall thickness (≥ 2 × nozzle width), add chamfers on the bed-facing edges instead of fillets.
 - Every `.scad` file starts with:
   ```

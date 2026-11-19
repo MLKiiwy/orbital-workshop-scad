@@ -22,6 +22,9 @@ The problem it solves / the motivation. Constraints that drove the design
 
 ## Printing
 
+Printer and filament defaults: see [docs/print-setup.md](../../docs/print-setup.md).
+
+- Slicer profile: 0.20mm Balanced Strength @BBL H2D
 - Material:
 - Layer height / nozzle:
 - Infill / walls:
