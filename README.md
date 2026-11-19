@@ -2,7 +2,7 @@
 
 A monorepo of my 3D modeling / 3D printing projects, written in [OpenSCAD](https://openscad.org).
 
-Every model is **parametric**: open it, tweak the parameters (in the code or in the
+Every model is **parametric** and fully metric (millimetres, SI units): open it, tweak the parameters (in the code or in the
 OpenSCAD Customizer), and export an STL/3MF for your printer.
 
 ## License
@@ -26,6 +26,7 @@ projects/<project-name>/   one directory per 3D project
   <project-name>.scad      the parametric model
   exports/                 generated STL/3MF (git-ignored)
 projects/_template/        starting point for a new project
+docs/print-setup.md        printer, filament, slicer profiles and the design limits they imply
 libs/                      shared OpenSCAD libraries (git submodules, e.g. BOSL2)
 scripts/                   helper scripts (setup, checks, export)
 ```
@@ -59,9 +60,15 @@ cp -R projects/_template projects/my-thing
 mv projects/my-thing/main.scad projects/my-thing/my-thing.scad
 
 # export (output goes to projects/my-thing/exports/)
-./scripts/export.sh projects/my-thing/my-thing.scad
+./scripts/export.sh projects/my-thing/my-thing.scad                         # 3MF (default)
+./scripts/export.sh projects/my-thing/my-thing.scad stl                     # STL
 ./scripts/export.sh projects/my-thing/my-thing.scad 3mf -D width=60 -D height=20
 ```
+
+3MF is the default: it records millimetres as the unit and opens natively in
+Bambu Studio. The script passes `-D use_colors=false` to 3MF exports so preview
+colors are not mistaken for separate filaments; add `-D use_colors=true` to keep
+them.
 
 Libraries are included with a path relative to the project file, e.g.
 `include <../../libs/BOSL2/std.scad>`, so models work identically in VSCode,
@@ -71,4 +78,4 @@ the OpenSCAD GUI and the command line.
 
 | Project | Description |
 |---------|-------------|
-| _none yet_ | |
+| [bike-battery-wall-holder](projects/bike-battery-wall-holder/) | Wall-mounted drop-in cradle for an e-bike battery, with charging-port access |
