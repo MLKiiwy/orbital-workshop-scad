@@ -11,10 +11,9 @@ A thick-walled U-channel cradle screwed to the wall. The battery drops in from
 the top and rests on a floor shelf; two side walls and two front lips hold it on
 the sides and the front. A teardrop-shaped opening in one side wall keeps the
 battery's own charging port reachable while it is docked, so it charges in
-place. Optional slots in the lips take a hook-and-loop strap across the battery
-face. Both side walls and the back plate are cut with a honeycomb of hexagonal
-cells to save filament; a solid frame stays at every joint and around the port
-and the screws.
+place. Both side walls, the back plate and the two lips are cut with a
+honeycomb of hexagonal cells to save filament; a solid frame stays at every
+joint and around the port and the screws.
 
 ```
         front view                       side view (port side)
@@ -23,8 +22,8 @@ and the screws.
    │  │   ◦       ◦   │  │ ← screws │              │     (against wall)
    │  │               │  │          │              │
    │▓▓│               │▓▓│          │              │
-   │▓▓│   ▭ strap     │▓▓│          │     ┌────┐   │
-   │▓▓│     slots     │▓▓│          │    │ ⌀35 │   │  ← charging port
+   │▓▓│               │▓▓│          │     ┌────┐   │
+   │▓▓│               │▓▓│          │    │ ⌀35 │   │  ← charging port
    │▓▓│               │▓▓│          │     ╲  ╱     │     (teardrop collar)
    │▓▓│   ◦       ◦   │▓▓│ ← screws │       ╲╱     │
    │▓▓└───────────────┘▓▓│          └──────────────┘
@@ -44,8 +43,8 @@ and the screws.
 | Front lips | 20 mm reach, 5 mm thick, 106.4 mm tall (70 % of the pocket), 54.4 mm open window between them |
 | Screw pattern | 44 mm apart in X, 92 mm apart in Z |
 | Charging port | ⌀35 mm, centre 30 mm from the battery's back face and 30 mm from its bottom face |
-| Honeycomb | 14 mm cells, 3 mm struts, 3 mm solid frame, partial cells along the frame — 88 cells on the plain side wall, 81 on the port wall, 88 on the back plate |
-| Solid volume | ≈ 175 cm³ (205 cm³ with whole cells only, 274 cm³ without the honeycomb; ≈ 180 g PETG with the settings below, scaled from an earlier slice) |
+| Honeycomb | 14 mm cells, 3 mm struts, 3 mm solid frame, partial cells along the frame — 88 cells on the plain side wall, 81 on the port wall, 88 on the back plate, 16 on each lip |
+| Solid volume | ≈ 167 cm³ (206 cm³ with whole cells only, 275 cm³ without the honeycomb; ≈ 170 g PETG with the settings below, scaled from an earlier slice) |
 
 The port centre is specified relative to the **battery**; the model adds
 `wall_back` and `wall_floor`, so in part coordinates the hole centre lands at
@@ -63,9 +62,10 @@ floor or a shelf gets knocked over. The goals that drove the design:
 - **Charge in place** — the side opening lines up with the battery's charging port.
 - **Hold at least 35 % of the battery height** (40 % by default) so it cannot tip out of the cradle.
 - **Save filament where it is not needed** — the side walls only tie the floor,
-  back plate and lips together, and the back plate only needs solid material
-  around the screws, so a honeycomb with a solid frame replaces the rest
-  (≈ 36 % less material).
+  back plate and lips together, the back plate only needs solid material
+  around the screws, and the lips only have to stop the battery tipping
+  forward, so a honeycomb with a solid frame replaces the rest (≈ 39 % less
+  material).
 - **Nothing sharp to the touch** — every exposed edge gets a small fillet
   (`fillet_r`), and the dimensions stay nominal.
 - **Carry 4 kg on a wall safely** — the weight sits on a thick floor shelf and
@@ -93,7 +93,7 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `col_floor` | `"DarkOrange"` | Floor shelf |
 | `col_lips` | `"Gold"` | Front retaining lips |
 | `col_collar` | `"MediumPurple"` | Charging-port collar |
-| `col_cuts` | `"Crimson"` | Faces exposed by screw holes, port and bed chamfer (also slots and lead-in when not rounded) |
+| `col_cuts` | `"Crimson"` | Faces exposed by screw holes, port and bed chamfer (also honeycomb and lead-in when not rounded) |
 | `col_ghost` | `[0.6, 0.8, 1.0, 0.35]` | Ghost battery / wall / screws (RGBA) |
 | **Battery** | | |
 | `battery_w` | 92 | Battery width, X (left ↔ right) |
@@ -139,17 +139,10 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 | `port_boss` | true | Reinforcing collar around the opening (outside) |
 | `port_boss_t` | 2.5 | How far the collar stands off the side wall |
 | `port_boss_w` | 5.0 | Radial width of the collar |
-| **Strap slots** | | |
-| `strap_enable` | true | Cut the strap slots through both lips |
-| `strap_h` | 25.0 | Slot height (strap width) |
-| `strap_t` | 4.0 | Slot width (strap thickness + slack) |
-| `strap_z_rows` | `[]` | Slot centre heights from the part bottom (`[]` = auto, one row near the top of the lips) |
-| `strap_z_margin` | 45 | Auto row: distance of the slot centre below the top of the lips |
-| `strap_rim_min` | 3 | Minimum lip material left on each side of a slot |
-| `strap_lead_in_gap` | 5 | Minimum gap between a slot and the lead-in taper of the lips |
 | **Honeycomb** | | |
 | `hex_sides` | true | Cut a honeycomb through both side walls to save filament |
 | `hex_back` | true | Cut a honeycomb through the back plate (clear of the screws) |
+| `hex_lips` | true | Cut a honeycomb through both front retaining lips |
 | `hex_spacing` | 14 | Centre-to-centre spacing of the hexagonal cells |
 | `hex_strut` | 3.0 | Material left between neighbouring cells |
 | `hex_frame` | 3 | Solid border kept around each pattern (wall joints, lead-in, port collar, screw heads) |
@@ -166,10 +159,9 @@ section (`/* [Section] */`) in [`bike-battery-wall-holder.scad`](bike-battery-wa
 The model `assert`s its own consistency: it refuses to render if the
 countersink no longer fits the back plate, the port opening would break into
 the floor/back plate or run past the lips, the lips overlap, the front window
-gets too narrow to drive a screw through, a strap slot runs into the lead-in
-taper of the lips, `lead_in_h` is taller than the lips, `lip_h_frac` is outside 0.50 – 1.00, the
+gets too narrow to drive a screw through, `lead_in_h` is taller than the lips, `lip_h_frac` is outside 0.50 – 1.00, the
 bed chamfer is larger than the thinnest wall, or `fillet_r` is not under half
-of the thinnest wall, lip, strap rim or collar. With the honeycomb on, it also
+of the thinnest wall, lip or collar. With the honeycomb on, it also
 refuses struts not wider than `2 × fillet_r` or two extrusion lines (0.9 mm),
 `hex_spacing` not larger than `hex_strut`, and `hex_frame` under `min_web`.
 `echo` prints a dimension summary on every render, including the number of
@@ -181,7 +173,10 @@ vertical — no supports. Each wall has an area the pattern may use: the wall
 minus `hex_frame` — on the side walls from the floor, back plate, lips (measured
 from their inner face, so the lip joint stays solid) and lead-in taper, and
 clear of the port collar; on the back plate from the side walls, the floor and
-the top, and clear of every screw head. The keep-outs around the collar and
+the top, and clear of every screw head; on each lip from the side-wall joint,
+the free edge, the floor and the lip lead-in taper (a 20 mm lip leaves a
+14 mm strip, so its cells are partial columns — with `hex_partial = false`
+the lips get no cells). The keep-outs around the collar and
 the screws are teardrops pointing down, so cells under them get 45° roofs.
 With `hex_partial = true` the lattice is clipped to that area, so cut-off cells
 fill it right up to the frame; cells that would leave a hole shallower than
@@ -193,7 +188,7 @@ smaller cells (`hex_spacing` ≈ 10) multiply the cell count and make it much
 slower.
 
 **How the fillet works:** every part is modelled `fillet_r` smaller on each
-exposed face, the lead-in and strap cuts `fillet_r` larger, then a Minkowski sum
+exposed face, the lead-in and honeycomb cuts `fillet_r` larger, then a Minkowski sum
 with a sphere grows everything back. All exposed edges come out rounded and
 inside corners stay sharp. The outside dimensions stay nominal to within the
 sphere's facet error (≈ 0.02 mm). Screw holes, the port and the bed chamfer
@@ -234,7 +229,7 @@ the shelf-to-wall joints, instead of peeling layers apart.
 - Brim: 5 mm (158 mm tall part)
 - Speeds: profile defaults (outer wall 60 mm/s)
 
-Expect roughly 180 g of PETG and a 5–7 h print (scaled from a slice of an
+Expect roughly 170 g of PETG and a 5–7 h print (scaled from a slice of an
 earlier, larger version — re-slice to confirm).
 
 ## Hardware (BOM)
@@ -243,7 +238,6 @@ earlier, larger version — re-slice to confirm).
 |-----|------|-------|
 | 4 | Countersunk wood/masonry screw, 4.0 × 40 mm, TX-20 | 35 mm embedment through the 5 mm back plate |
 | 4 | 6 mm nylon wall plug | Masonry only; on plasterboard hit a stud or use hollow-wall anchors rated > 10 kg each |
-| 1 | Hook-and-loop strap, 25 mm wide | Optional, through the strap slots |
 
 ### Mounting
 
@@ -260,9 +254,6 @@ by all four — a fraction of what 4.0 × 40 screws carry.
 
 **The fasteners, not the plastic, are the weak link.** Into plasterboard,
 4.0 × 40 screws alone will *not* hold 4 kg on a 50 mm lever arm.
-
-The strap is not load-bearing, but it is cheap insurance against the pack
-being knocked forward.
 
 ## Export
 
