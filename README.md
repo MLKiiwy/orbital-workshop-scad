@@ -60,9 +60,15 @@ cp -R projects/_template projects/my-thing
 mv projects/my-thing/main.scad projects/my-thing/my-thing.scad
 
 # export (output goes to projects/my-thing/exports/)
-./scripts/export.sh projects/my-thing/my-thing.scad
+./scripts/export.sh projects/my-thing/my-thing.scad                         # 3MF (default)
+./scripts/export.sh projects/my-thing/my-thing.scad stl                     # STL
 ./scripts/export.sh projects/my-thing/my-thing.scad 3mf -D width=60 -D height=20
 ```
+
+3MF is the default: it records millimetres as the unit and opens natively in
+Bambu Studio. The script passes `-D use_colors=false` to 3MF exports so preview
+colors are not mistaken for separate filaments; add `-D use_colors=true` to keep
+them.
 
 Libraries are included with a path relative to the project file, e.g.
 `include <../../libs/BOSL2/std.scad>`, so models work identically in VSCode,
