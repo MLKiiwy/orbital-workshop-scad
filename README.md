@@ -26,6 +26,7 @@ projects/<project-name>/   one directory per 3D project
   <project-name>.scad      the parametric model
   exports/                 generated STL/3MF (git-ignored)
 projects/_template/        starting point for a new project
+docs/print-setup.md        printer, filament, slicer profiles and the design limits they imply
 libs/                      shared OpenSCAD libraries (git submodules, e.g. BOSL2)
 scripts/                   helper scripts (setup, checks, export)
 ```

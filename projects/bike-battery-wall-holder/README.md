@@ -176,22 +176,27 @@ rounded version.
 
 ## Printing
 
-Printer: Bambu Lab. **Orientation: upright, floor shelf flat on the bed, back
-plate vertical** (the model is already in this orientation). This is the only
-orientation that needs no supports, and it puts the load in the right
-direction: the battery's weight becomes in-plane tension in the floor shelf and
-broad-area interlayer shear at the shelf-to-wall joints, instead of peeling
-layers apart.
+Printer: Bambu Lab H2D, 0.4 mm nozzle (see [docs/print-setup.md](../../docs/print-setup.md)).
+**Orientation: upright, floor shelf flat on the bed, back plate vertical** (the
+model is already in this orientation). This is the only orientation that needs
+no supports, and it puts the load in the right direction: the battery's weight
+becomes in-plane tension in the floor shelf and broad-area interlayer shear at
+the shelf-to-wall joints, instead of peeling layers apart.
 
-- Material: PETG
-- Layer height / nozzle: 0.20 mm / 0.4 mm
-- Infill / walls: 40 % gyroid / 5 wall loops (≈ 2.0 mm), 6 top / bottom layers
-- Supports: none — the port is a flat-topped teardrop (short bridge) and its
-  collar points down at `overhang_angle`
+- Process profile: **0.20mm Balanced Strength @BBL H2D**, with these overrides
+  for the 4 kg load:
+  - Walls: 5 wall loops (≈ 2.2 mm) instead of 2
+  - Infill: 40 % gyroid instead of 15 % grid
+  - Top / bottom layers: 6 / 4 (profile default)
+- Filament profile: **SUNLU PETG High Speed @Bambu Lab H2D 0.4 nozzle**
+  (SUNLU PETG High Speed Matte)
+  - Nozzle 255 °C; bed 75 °C on the textured PEI plate (70 °C on smooth PEI)
+  - Part cooling 40–90 % (profile), flow ratio 0.95, max volumetric speed 12 mm³/s
+- Supports: **off** — the profile enables auto tree supports, disable them. The
+  port is a flat-topped teardrop (short bridge) and its collar points down at
+  `overhang_angle`.
 - Brim: 5 mm (158 mm tall part)
-- Temperatures: nozzle 245 °C / bed 80 °C
-- Part cooling: 30–50 % — favour layer adhesion over crispness
-- Outer wall speed: 30–40 mm/s
+- Speeds: profile defaults (outer wall 60 mm/s)
 
 Expect roughly 275 g of PETG and an 8–11 h print (scaled from a slice of the
 earlier, larger version — re-slice to confirm).
