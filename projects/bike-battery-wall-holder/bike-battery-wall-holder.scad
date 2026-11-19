@@ -68,15 +68,15 @@ clear_front = 1.5; // [0:0.1:5]
 
 /* [Shell thickness] */
 // Back plate thickness (must fit the screw countersink), mm
-wall_back  = 8.0;  // [3:0.5:20]
+wall_back  = 5.0;  // [3:0.5:20]
 // Left and right side wall thickness, mm
-wall_side  = 5.0;  // [2:0.5:15]
+wall_side  = 4.0;  // [2:0.5:15]
 // Floor shelf thickness — carries the full battery weight, mm
-wall_floor = 8.0;  // [3:0.5:20]
+wall_floor = 6.0;  // [3:0.5:20]
 
 /* [Capture height] */
-// Fraction of the battery height the holder wraps (at least 0.5)
-capture_frac       = 0.55; // [0.50:0.01:1.00]
+// Fraction of the battery height the holder wraps (at least 0.35)
+capture_frac       = 0.40; // [0.35:0.01:1.00]
 // Explicit capture height, mm (0 = derive from capture_frac)
 capture_h_override = 0;    // [0:1:600]
 
@@ -85,14 +85,17 @@ capture_h_override = 0;    // [0:1:600]
 lip_w = 20.0;      // [5:0.5:60]
 // Y — lip thickness, mm
 lip_t = 5.0;       // [2:0.5:15]
+// Z — lip height as a fraction of the pocket height (floor to top), from the floor up
+lip_h_frac = 0.70; // [0.50:0.01:1.00]
 
 /* [Top lead-in chamfer] */
 // Flares the pocket mouth so the battery slides in without fighting it.
-// Z — chamfer height from the top edge down, mm
+// The same Z/Y taper is repeated on the inner face of the front lips.
+// Z — chamfer height from the top edge (and from the lip top) down, mm
 lead_in_h = 15.0;  // [0.5:0.5:50]
 // X — extra opening per side at the very top, mm
 lead_in_x = 2.0;   // [0:0.5:10]
-// Y — extra opening at the top (>= lip_t fully tapers the lips), mm
+// Y — extra opening at the top of the pocket and of the lips (>= lip_t gives a knife edge), mm
 lead_in_y = 7.0;   // [0:0.5:20]
 
 /* [Mounting screws] */
@@ -149,7 +152,7 @@ strap_h        = 25.0;  // [10:0.5:50]
 strap_t        = 4.0;   // [1:0.5:10]
 // Slot centre heights from the bottom of the part, mm ([] = auto: one row near the top)
 strap_z_rows   = [];
-// Auto row: distance of the slot centre below the part top, mm
+// Auto row: distance of the slot centre below the top of the lips, mm
 strap_z_margin = 45;    // [20:1:200]
 // Minimum lip material left on each side of a slot, mm
 strap_rim_min  = 3;     // [1:0.5:10]
@@ -174,6 +177,9 @@ $fn = $preview ? fn_preview : fn_render;
 eps          = 0.01; // avoids coincident faces in boolean ops
 overshoot    = 1;    // how far cutters poke past the faces they cut
 capture_step = 0.1;  // rounding step for the derived capture height
+capture_frac_min = 0.35; // smallest share of the battery height the holder may wrap
+lip_h_frac_min   = 0.50; // lip height limits, as a share of the pocket height
+lip_h_frac_max   = 1.00;
 ghost_wall_t = 15;   // thickness of the preview wall slab
 ghost_margin = 20;   // how far the preview wall extends past the part
 
@@ -189,6 +195,10 @@ capture_h = capture_h_override > 0
 total_w = cav_w + 2 * wall_side;
 total_d = wall_back + cav_d + lip_t;
 total_h = wall_floor + capture_h;
+
+// Front lips rise from the floor shelf to lip_top
+lip_h   = round(capture_h * lip_h_frac / capture_step) * capture_step;
+lip_top = wall_floor + lip_h;
 
 // Key planes
 pocket_x0 = wall_side;              // inner face of the left wall
@@ -216,7 +226,7 @@ screw_z = len(screw_z_rows) > 0
 // Strap slot rows
 strap_z = len(strap_z_rows) > 0
   ? strap_z_rows
-  : [ total_h - strap_z_margin ];
+  : [ lip_top - strap_z_margin ];
 
 // Port centre, converted from battery-referenced to part coordinates
 port_cy = wall_back  + port_from_back;
@@ -232,8 +242,9 @@ collar_tip = min((collar_d / 2) / sin(overhang_angle), port_cz);
 //  Sanity checks
 // =====================================================================
 
-assert(capture_h >= battery_h / 2,
-  "capture_h must hold at least half the battery height");
+assert(capture_h >= battery_h * capture_frac_min - eps,
+  str("capture_h must hold at least ", 100 * capture_frac_min,
+      " % of the battery height"));
 assert(cs_depth + screw_head_sink < wall_back - min_web,
   "wall_back too thin for the screw countersink — increase wall_back");
 assert(screw_head_d > screw_shank_d,
@@ -246,6 +257,9 @@ assert(len(screw_z) >= 2, "need at least two screw rows");
 assert(bed_chamfer < min(wall_side, wall_back, wall_floor, lip_t),
   "bed_chamfer larger than the thinnest wall");
 assert(lead_in_h < capture_h, "lead_in_h taller than the holder");
+assert(lead_in_h < lip_h, "lead_in_h taller than the front lips");
+assert(lip_h_frac >= lip_h_frac_min && lip_h_frac <= lip_h_frac_max,
+  str("lip_h_frac must be between ", lip_h_frac_min, " and ", lip_h_frac_max));
 
 if (port_enable) {
   assert(port_cz - port_d / 2 > wall_floor + min_web,
@@ -267,8 +281,10 @@ if (strap_enable) {
     "strap slot too wide for the lip — reduce strap_t");
   for (sz = strap_z) {
     assert(sz - strap_h / 2 > pocket_z0, "strap slot below the pocket floor");
-    assert(sz + strap_h / 2 < total_h - lead_in_h - strap_lead_in_gap,
-      "strap slot runs into the top lead-in taper — increase strap_z_margin");
+    assert(sz + strap_h / 2 < lip_top - strap_rim_min,
+      "strap slot runs past the top of the lips — increase strap_z_margin or lip_h_frac");
+    assert(sz + strap_h / 2 < lip_top - lead_in_h - strap_lead_in_gap,
+      "strap slot runs into the lead-in taper of the lips — increase strap_z_margin");
   }
 }
 
@@ -283,6 +299,8 @@ echo(str("pocket            : ", cav_w, " x ", cav_d, " mm"));
 echo(str("outside envelope  : ", total_w, " x ", total_d, " x ", total_h, " mm"));
 echo(str("battery captured  : ", capture_h, " mm (",
          round(100 * capture_h / battery_h), "% of height)"));
+echo(str("front lips        : ", lip_h, " mm tall (",
+         round(100 * lip_h_frac), "% of pocket), top at z=", lip_top, " mm"));
 echo(str("front window      : ", window_w, " mm wide"));
 echo(str("screw X positions : ", [ for (dx = screw_x_offsets) centre_x + dx ], " mm"));
 echo(str("screw Z positions : ", screw_z, " mm"));
@@ -354,7 +372,7 @@ module side_walls() {
 module front_lips() {
   for (x = [pocket_x0, pocket_x1 - lip_w])
     translate([x, pocket_y1, wall_floor])
-      box([lip_w, lip_t, total_h - wall_floor]);
+      box([lip_w, lip_t, lip_h]);
 }
 
 // Ring cutter that chamfers the bed-facing outer edges: a slab just under the
@@ -405,6 +423,18 @@ module lead_in_cut() {
   dy = lead_in_y * k;
   translate([centre_x, pocket_y0 + cav_d / 2, total_h - lead_in_h])
     prismoid(size1 = [cav_w, cav_d], size2 = [cav_w + 2 * dx, cav_d + dy],
+             shift = [0, dy / 2], h = lead_in_h + overshoot, anchor = BOTTOM);
+}
+
+// Same lead-in taper on the inner (battery-side) face of the front lips, so
+// a battery dropped in at a slight forward tilt is guided behind them. No X
+// flare here: that would notch the side walls partway up.
+module lip_lead_in_cut() {
+  k  = (lead_in_h + overshoot) / lead_in_h;
+  dy = lead_in_y * k;
+  w  = cav_w + 2 * eps;
+  translate([centre_x, pocket_y0 + cav_d / 2, lip_top - lead_in_h])
+    prismoid(size1 = [w, cav_d], size2 = [w, cav_d + dy],
              shift = [0, dy / 2], h = lead_in_h + overshoot, anchor = BOTTOM);
 }
 
@@ -467,6 +497,7 @@ module holder() {
     holder_solid();
     paint(col_cuts) {
       lead_in_cut();
+      lip_lead_in_cut();
       mount_holes();
       port_cut();
       strap_cuts();
