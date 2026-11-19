@@ -176,6 +176,8 @@ hex_spacing = 14;    // [8:0.5:40]
 hex_strut   = 3.0;   // [1.5:0.1:10]
 // Solid border kept around each pattern (wall joints, lead-in, port collar, screw heads), mm
 hex_frame   = 3;     // [3:0.5:30]
+// Also cut the partial cells along the border, so the pattern fills each wall fully
+hex_partial = true;
 
 /* [Edge rounding] */
 // Fillet radius on every exposed edge (0 = sharp). Bed-facing edges keep bed_chamfer, mm
@@ -274,14 +276,21 @@ min_line = 0.45;                                   // one extrusion line, see do
 hex_any  = hex_sides || hex_back;
 hex_r    = (hex_spacing - hex_strut) / sqrt(3);    // cell circumradius
 hex_keep = port_boss ? collar_d / 2 : port_d / 2 + min_web;
+hex_min_piece = 2;   // shallowest partial cell kept, mm — avoids thin hole slivers
 // Flat-top hexagon lattice: columns of cells, alternate columns shifted half a cell
 hex_grid_spacing = [hex_spacing * sqrt(3) / 2, hex_spacing / 2];
-// Whole cells inside the rectangle [u0,u1] x [v0,v1] of a wall's plane. The
-// lattice is centred on the rectangle and both stagger phases are tried; the
-// one that fits more cells wins.
-function hex_cells_in(u0, u1, v0, v1) =
-  let(w = u1 - u0 - 2 * hex_r, h = v1 - v0 - 2 * hex_r,
-      c = [(u0 + u1) / 2, (v0 + v1) / 2])
+// Cell centres for a rectangle [u0, u1, v0, v1] of a wall's plane. The lattice
+// is centred on the rectangle and both stagger phases are tried; the one that
+// gives more cells wins.
+//   Whole cells only: centres stay one radius inside the rectangle.
+//   Partial cells:    centres may sit outside the rectangle, as long as at
+//                     least hex_min_piece of the cell reaches into it (the
+//                     cutter is clipped to the rectangle later).
+function hex_cells_in(rect) =
+  let(mu = hex_partial ? -(hex_r - hex_min_piece) : hex_r,
+      mv = hex_partial ? -(hex_r * sqrt(3) / 2 - hex_min_piece) : hex_r,
+      w = rect[1] - rect[0] - 2 * mu, h = rect[3] - rect[2] - 2 * mv,
+      c = [(rect[0] + rect[1]) / 2, (rect[2] + rect[3]) / 2])
   w <= 0 || h <= 0 ? []
   : let(box = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]],
         grid = function (st) [ for (m = grid_copies(spacing = hex_grid_spacing,
@@ -290,25 +299,29 @@ function hex_cells_in(u0, u1, v0, v1) =
                                  c + [m[0][3], m[1][3]] ],
         a = grid(true), b = grid("alt"))
     len(b) > len(a) ? b : a;
-// Cells whose centre is at least `clear` from every point in `keep`
-function hex_clear_of(cells, keep, clear) =
-  [ for (p = cells) if (len([ for (k = keep) if (norm(p - k) < clear) 1 ]) == 0) p ];
-// Side walls, in (y, z): clear of the back plate, the lips, the floor and the
-// lead-in; on the port wall also clear of the collar (or port rim)
-hex_cells_plain = hex_sides
-  ? hex_cells_in(wall_back + hex_frame, total_d - hex_frame,
-                 wall_floor + hex_frame, total_h - lead_in_h - hex_frame)
-  : [];
-hex_cells_port  = port_enable
-  ? hex_clear_of(hex_cells_plain, [[port_cy, port_cz]], hex_keep + hex_frame + hex_r)
-  : hex_cells_plain;
+// Drop cells that hit a keep-out [centre, radius]: whole mode keeps the full
+// cell outside; partial mode only drops cells that would leave a sliver.
+function hex_clear_of(cells, keeps) =
+  [ for (p = cells)
+      if (len([ for (k = keeps)
+                  if (norm(p - k[0]) < (hex_partial ? k[1] - hex_r + hex_min_piece
+                                                    : k[1] + hex_r)) 1 ]) == 0) p ];
+// Side walls, in (y, z): inside the back plate, lip, floor and lead-in borders
+// (the front border starts at the lips' inner face, so the lip joint stays
+// solid); on the port wall also clear of the collar (or port rim)
+hex_side_rect  = [wall_back + hex_frame, pocket_y1 - hex_frame,
+                  wall_floor + hex_frame, total_h - lead_in_h - hex_frame];
+hex_port_keeps = port_enable ? [[[port_cy, port_cz], hex_keep + hex_frame]] : [];
+hex_cells_plain = hex_sides ? hex_cells_in(hex_side_rect) : [];
+hex_cells_port  = hex_clear_of(hex_cells_plain, hex_port_keeps);
 // Back plate, in (x, z): between the side walls, above the floor, clear of
 // the screw heads
-hex_screws     = [ for (dx = screw_x_offsets, cz = screw_z) [centre_x + dx, cz] ];
-hex_cells_back = hex_back
-  ? hex_clear_of(hex_cells_in(pocket_x0 + hex_frame, pocket_x1 - hex_frame,
-                              wall_floor + hex_frame, total_h - hex_frame),
-                 hex_screws, screw_head_d / 2 + hex_frame + hex_r)
+hex_back_rect   = [pocket_x0 + hex_frame, pocket_x1 - hex_frame,
+                   wall_floor + hex_frame, total_h - hex_frame];
+hex_screw_keeps = [ for (dx = screw_x_offsets, cz = screw_z)
+                      [[centre_x + dx, cz], screw_head_d / 2 + hex_frame] ];
+hex_cells_back  = hex_back
+  ? hex_clear_of(hex_cells_in(hex_back_rect), hex_screw_keeps)
   : [];
 
 // =====================================================================
@@ -614,8 +627,26 @@ module strap_cuts() {
 // fr (delta offset: after the rounding the hexagon comes back exact, with
 // filleted rims).
 module hex_cells_2d(pts) {
+  for (c = pts) translate(c) hexagon(r = hex_r);
+}
+
+// Area a pattern may use: the border rectangle minus the keep-outs. Keep-outs
+// are teardrops pointing down, so partial cells under them get 45° roofs.
+module hex_area_2d(rect, keeps) {
+  difference() {
+    translate([rect[0], rect[2]]) square([rect[1] - rect[0], rect[3] - rect[2]]);
+    for (k = keeps)
+      translate(k[0]) mirror([0, 1]) teardrop2d(r = k[1], ang = overhang_angle);
+  }
+}
+
+// One wall's cutter in 2D, grown by fr for the rounding pass.
+module hex_pattern_2d(pts, rect, keeps) {
   offset(delta = fr)
-    for (c = pts) translate(c) hexagon(r = hex_r);
+    if (hex_partial)
+      intersection() { hex_area_2d(rect, keeps); hex_cells_2d(pts); }
+    else
+      hex_cells_2d(pts);
 }
 
 module hex_cuts() {
@@ -624,14 +655,15 @@ module hex_cuts() {
   port_x   = port_side == "left" ? wall_side / 2 : total_w - wall_side / 2;
   plain_x  = port_side == "left" ? total_w - wall_side / 2 : wall_side / 2;
   if (hex_sides)
-    for (w = [[port_x, hex_cells_port], [plain_x, hex_cells_plain]])
+    for (w = [[port_x, hex_cells_port, hex_port_keeps], [plain_x, hex_cells_plain, []]])
       translate([w[0], 0, 0]) rotate([90, 0, 90])
-        linear_extrude(height = side_len, center = true) hex_cells_2d(w[1]);
+        linear_extrude(height = side_len, center = true)
+          hex_pattern_2d(w[1], hex_side_rect, w[2]);
   // back plate: 2D (x, z), extruded along Y through the plate
   if (hex_back)
     translate([0, wall_back / 2, 0]) rotate([90, 0, 0])
       linear_extrude(height = wall_back + 2 * (overshoot + fr), center = true)
-        hex_cells_2d(hex_cells_back);
+        hex_pattern_2d(hex_cells_back, hex_back_rect, hex_screw_keeps);
 }
 
 // ---------------------------------------------------------------------
