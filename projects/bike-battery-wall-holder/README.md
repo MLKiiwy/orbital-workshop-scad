@@ -7,6 +7,8 @@
 Designed primarily for the **Bafang BT F08.600.C (600 Wh)** e-bike battery.
 Other packs of similar size fit by changing the `battery_*` parameters.
 
+![Printed holder installed on the wall, holding a Bafang battery with the charger plugged in](pictures/holder_printed_and_installed.jpg)
+
 A thick-walled U-channel cradle screwed to the wall. The battery drops in from
 the top and rests on a floor shelf; two side walls and two front lips hold it on
 the sides and the front. A teardrop-shaped opening in one side wall keeps the
@@ -266,13 +268,17 @@ the screws firmly.
 
 ## Status
 
-Created 2026-11-19.
+Created 2026-11-19. Printed in PETG and installed 2026-11-21 (photo above):
+the battery drops in and lifts out, and the charger plugs in through the side
+opening while it is docked.
 
 - [x] Design
-- [ ] Test print
+- [x] Test print
 - [ ] Final
 
-Notes before the first print:
+The MakerWorld listing text is in [MAKERWORLD.md](MAKERWORLD.md).
+
+Notes from before the first print, still worth checking on another battery or wall:
 
 - Geometry has been checked in renders (pocket clear of interference, port and
   screw placement, lip taper, edge fillets) but not on a real battery.
