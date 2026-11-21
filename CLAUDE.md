@@ -9,7 +9,7 @@ Monorepo of parametric OpenSCAD models for 3D printing. License: CC BY-NC-SA 4.0
   - `exports/` — generated STL/3MF, git-ignored. Never commit exports.
 - Shared libraries live in `libs/` as git submodules. Project-shared helper modules go in `libs/common/` if they ever emerge.
 - When a project is added, add a row to the Projects table in the root `README.md`.
-- MakerWorld uploads: never upload the main `.scad`. Generate a single-file copy with `scripts/makerworld.py` (config in `projects/<name>/makerworld.json`, output in `projects/<name>/makerworld/`), following [docs/makerworld-parametric.md](docs/makerworld-parametric.md). Regenerate it whenever the main model changes.
+- MakerWorld uploads: never upload the main `.scad`. Generate a single-file copy with `scripts/makerworld.py` (config in `projects/<name>/makerworld.json`, output in `projects/<name>/makerworld/`, git-ignored — never commit it), following [docs/makerworld-parametric.md](docs/makerworld-parametric.md). Regenerate it whenever the main model changes.
 
 ## Modeling rules
 - **OpenSCAD only.**

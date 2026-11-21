@@ -7,11 +7,17 @@ Copy the sections below into the MakerWorld upload form.
 | File | Where in the form | Why |
 |------|-------------------|-----|
 | `exports/bike-battery-wall-holder.3mf` (from `./scripts/export.sh projects/bike-battery-wall-holder/bike-battery-wall-holder.scad`, then sliced and saved in Bambu Studio with the settings below) | Print profile | Ready to print, with the 1 mm rounded edges |
-| [`makerworld/bike-battery-wall-holder.scad`](makerworld/bike-battery-wall-holder.scad) | Raw Model Files | Turns on the **Customize** button (Parametric Model Maker) |
+| `makerworld/bike-battery-wall-holder.scad` (generated, see below) | Raw Model Files | Turns on the **Customize** button (Parametric Model Maker) |
 | `pictures/holder_printed_and_installed.jpg` | Pictures | |
 
 The `.scad` for MakerWorld is generated from the main model by
-`scripts/makerworld.py`. Regenerate it after any change to the model. See
+`scripts/makerworld.py` and is not in git. Generate it just before uploading:
+
+```sh
+./scripts/makerworld.py projects/bike-battery-wall-holder/bike-battery-wall-holder.scad
+```
+
+See
 [docs/makerworld-parametric.md](../../docs/makerworld-parametric.md) for the
 rules it follows. Unlike the 3MF, it has **sharp edges**: MakerWorld's renderer
 times out on the Minkowski edge rounding.

@@ -1,5 +1,7 @@
 # Generated exports
 exports/
+# Generated MakerWorld copies (scripts/makerworld.py)
+projects/*/makerworld/
 *.stl
 *.3mf
 *.amf
