@@ -268,13 +268,13 @@ the screws firmly.
 
 ### MakerWorld version
 
-[`makerworld/bike-battery-wall-holder.scad`](makerworld/bike-battery-wall-holder.scad)
-is a single-file copy for MakerWorld's Parametric Model Maker. It is
-**generated, do not edit it**. Regenerate it after changing the model, and
-check it is up to date with `--check`:
+MakerWorld's Parametric Model Maker needs a single-file copy of the model,
+`makerworld/bike-battery-wall-holder.scad`. It is generated and **not in git**
+(the `makerworld/` folder is git-ignored), so create it just before uploading:
 
 ```sh
 ./scripts/makerworld.py projects/bike-battery-wall-holder/bike-battery-wall-holder.scad
+./scripts/export.sh projects/bike-battery-wall-holder/makerworld/bike-battery-wall-holder.scad   # optional render test
 ```
 
 [`makerworld.json`](makerworld.json) lists what the copy changes. BOSL2 is

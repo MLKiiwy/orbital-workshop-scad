@@ -25,10 +25,13 @@ projects/<project-name>/   one directory per 3D project
   README.md                what we build and why, parameters, print settings
   <project-name>.scad      the parametric model
   exports/                 generated STL/3MF (git-ignored)
+  makerworld.json          optional: what changes in the MakerWorld copy
+  makerworld/              generated MakerWorld copy of the model (git-ignored)
 projects/_template/        starting point for a new project
 docs/print-setup.md        printer, filament, slicer profiles and the design limits they imply
+docs/makerworld-parametric.md  MakerWorld Parametric Model Maker rules, with sources
 libs/                      shared OpenSCAD libraries (git submodules, e.g. BOSL2)
-scripts/                   helper scripts (setup, checks, export)
+scripts/                   helper scripts (setup, checks, export, MakerWorld copy)
 ```
 
 ## Setup
@@ -69,6 +72,31 @@ mv projects/my-thing/main.scad projects/my-thing/my-thing.scad
 Bambu Studio. The script passes `-D use_colors=false` to 3MF exports so preview
 colors are not mistaken for separate filaments; add `-D use_colors=true` to keep
 them.
+
+### Publishing a customizable model on MakerWorld
+
+MakerWorld's **Customize** button (its Parametric Model Maker) runs OpenSCAD
+online, but it only reads the one `.scad` file you upload. It has its own
+copy of BOSL2, which must be included as `<BOSL2/std.scad>`, and it times out
+on slow operations like `minkowski()`. So the project's main `.scad` cannot be
+uploaded as is. Instead, `scripts/makerworld.py` generates a MakerWorld copy
+from it:
+
+```sh
+./scripts/makerworld.py projects/my-thing/my-thing.scad          # writes projects/my-thing/makerworld/my-thing.scad
+./scripts/makerworld.py projects/my-thing/my-thing.scad --check  # fails if that copy is older than the model
+./scripts/export.sh projects/my-thing/makerworld/my-thing.scad   # render test, like MakerWorld would
+```
+
+- It reads `projects/my-thing/makerworld.json`:
+  - `hide` takes parameters out of the Customizer and fixes them after `/* [Hidden] */`. Use `null` to keep the value, or give a new one. Use it for lists, preview helpers and slow options.
+  - `replace` lists exact text substitutions, e.g. centring the part on the bed.
+- It rewrites `../../libs/<lib>/` includes to `<lib>/`, and stops if any local include is left.
+- The output in `projects/*/makerworld/` is **generated and git-ignored**. Never edit it. Regenerate it before each upload.
+- Upload it under *Raw Model Files* on the listing, next to a 3MF exported from the main model.
+
+The rules it follows, how to test against MakerWorld's BOSL2 version, and the
+sources are in [docs/makerworld-parametric.md](docs/makerworld-parametric.md).
 
 Libraries are included with a path relative to the project file, e.g.
 `include <../../libs/BOSL2/std.scad>`, so models work identically in VSCode,

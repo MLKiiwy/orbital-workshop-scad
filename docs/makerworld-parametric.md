@@ -41,7 +41,7 @@ The main model stays the source of truth. A generated copy is uploaded.
 - `projects/<name>/makerworld.json` lists what changes for MakerWorld:
   - `hide`: parameters taken out of the Customizer and re-declared after `/* [Hidden] */`. The value is `null` to keep the original value, or a new value. Use it for vector parameters, preview-only helpers and colors, and slow options such as a Minkowski fillet, which is forced to `0`.
   - `replace`: exact text substitutions, e.g. centring the part on the origin.
-- `scripts/makerworld.py projects/<name>/<name>.scad` writes `projects/<name>/makerworld/<name>.scad`. It also rewrites `../../libs/<lib>/` includes to `<lib>/` and fails if any relative include is left. Commit the generated file. Add `--check` to verify it is up to date after editing the main model.
+- `scripts/makerworld.py projects/<name>/<name>.scad` writes `projects/<name>/makerworld/<name>.scad`. It also rewrites `../../libs/<lib>/` includes to `<lib>/` and fails if any relative include is left. The output is generated and git-ignored (`projects/*/makerworld/`): regenerate it before every upload. `--check` only verifies that an existing copy matches the current model.
 - Render the generated file with `./scripts/export.sh` (it sets `OPENSCADPATH` to `libs/`, so `<BOSL2/...>` resolves), and also against MakerWorld's pinned BOSL2:
 
   ```sh
