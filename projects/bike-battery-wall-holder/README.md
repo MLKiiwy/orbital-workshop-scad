@@ -266,6 +266,24 @@ the screws firmly.
 ./scripts/export.sh projects/bike-battery-wall-holder/bike-battery-wall-holder.scad
 ```
 
+### MakerWorld version
+
+[`makerworld/bike-battery-wall-holder.scad`](makerworld/bike-battery-wall-holder.scad)
+is a single-file copy for MakerWorld's Parametric Model Maker. It is
+**generated, do not edit it**. Regenerate it after changing the model, and
+check it is up to date with `--check`:
+
+```sh
+./scripts/makerworld.py projects/bike-battery-wall-holder/bike-battery-wall-holder.scad
+```
+
+[`makerworld.json`](makerworld.json) lists what the copy changes. BOSL2 is
+included as `<BOSL2/std.scad>`. The vector parameters (`screw_x_offsets`,
+`screw_z_rows`), the preview helpers and colors, and the edge rounding move to
+`[Hidden]`, with `fillet_r = 0` because MakerWorld times out on `minkowski()`.
+The part is also centred on the origin. Rules and sources are in
+[docs/makerworld-parametric.md](../../docs/makerworld-parametric.md).
+
 ## Status
 
 Created 2026-11-19. Printed in PETG and installed 2026-11-21 (photo above):

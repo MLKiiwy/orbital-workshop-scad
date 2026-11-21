@@ -1,0 +1,23 @@
+{
+  "hide": {
+    "show_battery": "false",
+    "show_wall": "false",
+    "show_screws": "false",
+    "use_colors": "false",
+    "col_back": null,
+    "col_sides": null,
+    "col_floor": null,
+    "col_lips": null,
+    "col_collar": null,
+    "col_cuts": null,
+    "col_ghost": null,
+    "screw_x_offsets": null,
+    "screw_z_rows": null,
+    "fillet_r": "0",
+    "fillet_fn": null,
+    "fillet_preview": "false"
+  },
+  "replace": [
+    ["\nholder();\n", "\n// Centred on the bed origin (MakerWorld places the part as modelled).\ntranslate([-total_w / 2, -total_d / 2, 0]) holder();\n"]
+  ]
+}

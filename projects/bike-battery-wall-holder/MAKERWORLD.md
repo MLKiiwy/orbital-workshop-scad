@@ -2,6 +2,20 @@
 
 Copy the sections below into the MakerWorld upload form.
 
+## Files to upload
+
+| File | Where in the form | Why |
+|------|-------------------|-----|
+| `exports/bike-battery-wall-holder.3mf` (from `./scripts/export.sh projects/bike-battery-wall-holder/bike-battery-wall-holder.scad`, then sliced and saved in Bambu Studio with the settings below) | Print profile | Ready to print, with the 1 mm rounded edges |
+| [`makerworld/bike-battery-wall-holder.scad`](makerworld/bike-battery-wall-holder.scad) | Raw Model Files | Turns on the **Customize** button (Parametric Model Maker) |
+| `pictures/holder_printed_and_installed.jpg` | Pictures | |
+
+The `.scad` for MakerWorld is generated from the main model by
+`scripts/makerworld.py`. Regenerate it after any change to the model. See
+[docs/makerworld-parametric.md](../../docs/makerworld-parametric.md) for the
+rules it follows. Unlike the 3MF, it has **sharp edges**: MakerWorld's renderer
+times out on the Minkowski edge rounding.
+
 ---
 
 ## Title
@@ -32,7 +46,7 @@ I got tired of my 4 kg e-bike battery lying on the floor while it charged, so I 
 - **Charge in place**: a 35 mm opening in the side wall lines up with the battery's charging port. A collar reinforces the edge, and the rims are chamfered so they don't rub the cable.
 - **Holds 40 % of the battery height** (152 mm), so the battery cannot tip out.
 - **Honeycomb walls**: the side walls, back plate and lips have hexagonal cut-outs with a solid frame at every joint. This uses about 39 % less filament than solid walls.
-- **No sharp edges**: every exposed edge is rounded (1 mm fillet).
+- **No sharp edges**: in the ready-to-print file, every exposed edge is rounded (1 mm fillet).
 - **No supports needed**: the hexagon tops and the teardrop-shaped port opening are designed to print without supports.
 
 ### Size
@@ -74,7 +88,7 @@ Print time is roughly 5–7 h, depending on your printer.
 
 ### Customizing
 
-The model is written in OpenSCAD (with the BOSL2 library), and every dimension is a parameter. You can change it in the MakerWorld Customizer or in OpenSCAD:
+Click **Customize** to change the model in your browser. Every dimension is a parameter. The customized version has sharp edges instead of the 1 mm rounding, because the rounding is too slow for MakerWorld's online renderer. The main options:
 
 - **Other battery:** set `battery_w`, `battery_d`, `battery_h` to your battery's measurements. Measure it first: the pocket assumes a plain rectangular box. If your battery has a tapered foot, a latch or rails, increase `clear_side` / `clear_front`.
 - **Charging port position:** `port_from_back` and `port_from_bottom` set the hole centre, measured from the battery's back and bottom faces. `port_d` sets the hole size, so make it bigger if your charger plug is bulky. `port_side` (`left` / `right`, as seen standing in front of the holder) chooses which wall gets the opening. Set `port_enable = false` for no opening.
