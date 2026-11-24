@@ -138,3 +138,4 @@ the OpenSCAD GUI and the command line.
 | Project | Description |
 |---------|-------------|
 | [bike-battery-wall-holder](projects/bike-battery-wall-holder/) | Wall-mounted drop-in cradle for an e-bike battery, with charging-port access |
+| [lego-duplo-bakfiets](projects/lego-duplo-bakfiets/) | DUPLO-compatible Dutch cargo bike: frame, cargo box, rain tent and two snap-on wheels |
