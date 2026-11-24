@@ -8,7 +8,8 @@
 # projects/<name>/makerworld/<name>.scad: a single self-contained file that
 # follows docs/makerworld-parametric.md:
 #   - library includes rewritten from ../../libs/<lib>/... to <lib>/...
-#     (MakerWorld only has its bundled libraries, at the top level);
+#     (MakerWorld only has its bundled libraries, at the top level; a model
+#     using any other library, e.g. NopSCADlib or Round-Anything, is refused);
 #   - the parameters listed under "hide" leave the Customizer: their lines
 #     (and the comment lines just above them) are removed from the
 #     Customizer sections and re-declared after /* [Hidden] */, optionally
@@ -23,6 +24,8 @@ from pathlib import Path
 
 HIDDEN = "/* [Hidden] */"
 SECTION = re.compile(r"^/\*\s*\[[^\]]+\]\s*\*/\s*$")
+# Library directories MakerWorld bundles (docs/makerworld-parametric.md).
+MAKERWORLD_LIBS = {"BOSL2", "threads-scad", "gridfinity-rebuilt-openscad", "KeyV2"}
 
 
 def fail(msg):
@@ -91,6 +94,10 @@ def generate(src: Path, cfg: dict) -> str:
 
     if re.search(r"(include|use)\s*<\.", text):
         fail("a relative include/use is left; MakerWorld only takes one file")
+    for lib in sorted(set(re.findall(r"(?:include|use)\s*<([^/>]+)/", text))):
+        if lib not in MAKERWORLD_LIBS:
+            fail(f"MakerWorld has no '{lib}' library (it only bundles "
+                 f"{', '.join(sorted(MAKERWORLD_LIBS))}); see docs/makerworld-parametric.md")
     return text
 
 
