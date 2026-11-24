@@ -1,0 +1,39 @@
+# Dev tools, environment and tasks for this repo — https://mise.jdx.dev
+# Setup: `mise install && mise run setup`. Checks: `mise run check`.
+# OpenSCAD itself is installed separately (see README "Setup").
+
+[tools]
+python = "3.13.18"                         # scripts/makerworld.py
+"github:schorsch3000/scadfmt" = "0.1.0"    # OpenSCAD formatter
+lefthook = "2.2.2"                         # git hooks (lefthook.yml)
+
+[env]
+OPENSCADPATH = "{{config_root}}/libs"
+
+[tasks.setup]
+description = "Fetch libraries, install git hooks, check OpenSCAD"
+run = [
+  "git submodule update --init --recursive",
+  "lefthook install",
+  "scripts/check-openscad.sh",
+]
+
+[tasks.fmt]
+description = "Format the tracked project .scad files in place"
+run = "scripts/scad-files.sh | xargs scadfmt -w"
+
+[tasks."fmt:check"]
+description = "Fail if a tracked project .scad file is not formatted"
+run = "scripts/scad-files.sh | xargs scadfmt -check"
+
+[tasks.lint]
+description = "Repo rules (header, library includes, project layout) on the tracked project .scad files"
+run = "scripts/lint.sh"
+
+[tasks.validate]
+description = "Strict OpenSCAD validation (openscad skill) of the tracked project .scad files"
+run = "scripts/validate.sh"
+
+[tasks.check]
+description = "Everything the git hooks and CI run"
+depends = ["fmt:check", "lint", "validate"]

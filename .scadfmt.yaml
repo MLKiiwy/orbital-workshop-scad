@@ -1,0 +1,14 @@
+# scadfmt config — https://github.com/schorsch3000/scadfmt
+# Run: `mise run fmt` (write) / `mise run fmt:check` (CI, git hooks).
+max_width: 120
+indent: 4
+use_tabs: false
+chain: auto
+chain_indent: step
+matrix: preserve        # keep hand-laid tables of points/faces as written
+
+align:
+  assignments: true     # aligned = in Customizer parameter blocks
+  trailing_comments: true
+  params: false
+  max_gap: 8

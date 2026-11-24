@@ -1,0 +1,23 @@
+# Git hooks — https://lefthook.dev. Installed by `mise run setup` (or scripts/setup.sh).
+# They block the commit/push on failure. Never bypass them (no --no-verify).
+# Fix formatting with `mise run fmt`.
+
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "projects/**/*.scad"
+      run: mise exec -- scadfmt -check {staged_files}
+      fail_text: "Not formatted — run: mise run fmt"
+    lint:
+      glob: "projects/**/*.scad"
+      run: mise exec -- scripts/lint.sh {staged_files}
+    validate:
+      glob: "projects/**/*.scad"
+      run: mise exec -- scripts/validate.sh {staged_files}
+
+pre-push:
+  commands:
+    check:
+      # All tracked models, so library (submodule) bumps are covered too.
+      run: mise run check
