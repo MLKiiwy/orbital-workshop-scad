@@ -1,3 +1,21 @@
 [submodule "libs/BOSL2"]
 	path = libs/BOSL2
 	url = https://github.com/BelfrySCAD/BOSL2.git
+[submodule "libs/NopSCADlib"]
+	path = libs/NopSCADlib
+	url = https://github.com/nophead/NopSCADlib.git
+[submodule "libs/Round-Anything"]
+	path = libs/Round-Anything
+	url = https://github.com/Irev-Dev/Round-Anything.git
+[submodule "libs/threads-scad"]
+	path = libs/threads-scad
+	url = https://github.com/rcolyer/threads-scad.git
+[submodule "libs/gridfinity-rebuilt-openscad"]
+	path = libs/gridfinity-rebuilt-openscad
+	url = https://github.com/kennetek/gridfinity-rebuilt-openscad.git
+[submodule "libs/LEGO.scad"]
+	path = libs/LEGO.scad
+	url = https://github.com/cfinke/LEGO.scad.git
+[submodule ".claude/skills/openscad"]
+	path = .claude/skills/openscad
+	url = https://github.com/andreahaku/openscad_claude_skill.git

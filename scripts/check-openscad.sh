@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Check that OpenSCAD and the shared libraries are available.
+# Check that OpenSCAD, the shared libraries and the openscad skill are available.
 # SPDX-License-Identifier: CC-BY-NC-SA-4.0
 set -u
 
@@ -45,11 +45,15 @@ else
   ok=0
 fi
 
-if [ -f "$ROOT/libs/BOSL2/std.scad" ]; then
-  green "✔ BOSL2 library present (libs/BOSL2)"
-else
-  red "✘ BOSL2 library missing — run: git submodule update --init --recursive  (or ./scripts/setup.sh)"
-  ok=0
-fi
+# Every submodule (libraries in libs/, the openscad skill in .claude/skills/)
+# must be checked out.
+while read -r _ path; do
+  if [ -n "$(ls -A "$ROOT/$path" 2>/dev/null)" ]; then
+    green "✔ $path present"
+  else
+    red "✘ $path missing — run: git submodule update --init --recursive  (or ./scripts/setup.sh)"
+    ok=0
+  fi
+done < <(git -C "$ROOT" config -f .gitmodules --get-regexp '^submodule\..*\.path$')
 
 if [ "$ok" -eq 1 ]; then green "Environment OK"; exit 0; else exit 1; fi
