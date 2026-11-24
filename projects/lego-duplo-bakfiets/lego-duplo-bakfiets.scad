@@ -49,7 +49,7 @@ ground_clearance = 4;   // [2:0.5:10]
 // Width of the main frame beam (Y), mm
 beam_w   = 16; // [10:1:28]
 // X position of the centre of the 2x2 cargo-box mounting deck, mm
-deck_x   = 60; // [40:1:80]
+deck_x   = 54; // [40:1:80]
 // X position of the saddle, mm
 saddle_x = 12; // [0:1:40]
 // Height of the saddle top above the ground, mm
@@ -57,7 +57,7 @@ saddle_z = 56; // [35:1:70]
 // Width of the saddle ridge a DUPLO figure straddles, mm
 saddle_w = 9;  // [6:0.5:16]
 // X position of the handlebar, mm
-bar_x    = 30; // [20:1:50]
+bar_x    = 28; // [20:1:50]
 // Height of the handlebar above the ground, mm
 bar_z    = 52; // [35:1:70]
 // Total handlebar width, mm
@@ -93,6 +93,8 @@ axle_hole_d    = 6.3; // [4:0.1:11]
 barb_d         = 7.6; // [5:0.1:12]
 // Length of the barb's lead-in cone, mm
 barb_cone_h    = 1.4; // [0.6:0.1:3]
+// Cut a lightening window in each front fork leg
+fork_window    = true;
 // Thickness of each fork cheek, mm
 cheek_t        = 4;   // [3:0.2:8]
 // Axial gap between the wheel hub and each fork cheek, mm
@@ -110,25 +112,26 @@ slot_depth     = 3;   // [0:0.5:6]
 
 /* [Cargo box] */
 // Height of the box walls above the floor plate, mm
-box_h        = 18; // [12:1:40]
+box_h    = 20;        // [12:1:40]
 // Box wall thickness, mm
-box_wall     = 2;  // [1.6:0.1:4]
-// How far the box flares outward front and back, bottom to rim, mm
-box_flare_x  = 5;  // [0:0.5:12]
+box_wall = 2;         // [1.6:0.1:4]
+// How far the box leans out toward the front wheel, bottom to rim, mm. The back wall
+// stays vertical so the box can tuck right up against the handlebar.
+box_flare_front = 23; // [0:0.5:34]
 // How far the box flares outward left and right, bottom to rim, mm
-box_flare_y  = 3;  // [0:0.5:8]
+box_flare_y     = 3;  // [0:0.5:8]
 // Height of the straight collar at the top of the box the tent grips, mm
-box_collar_h = 6;  // [3:0.5:12]
+box_collar_h    = 4;  // [3:0.5:12]
 // Corner rounding radius of the box, mm
-box_round    = 3;  // [0:0.5:8]
+box_round       = 3;  // [0:0.5:8]
 
 /* [Rain tent] */
 // Height of the tent above the box rim, mm
 tent_h       = 26;   // [14:1:44]
 // Tent wall thickness, mm
 tent_wall    = 2;    // [1.6:0.1:4]
-// How far the tent skirt reaches down over the box collar, mm
-tent_skirt_h = 6;    // [3:0.5:12]
+// How far the tent skirt reaches down over the box collar, mm. Must not exceed box_collar_h.
+tent_skirt_h = 4;    // [3:0.5:12]
 // Interference per side between the tent skirt and the box collar, mm. Lower = looser.
 tent_grip    = 0.25; // [0:0.05:0.6]
 // How far the roof tapers in per side, mm
@@ -146,7 +149,7 @@ kickstand_y = 14; // [8:1:24]
 // Thickness of the kickstand stub, mm
 kickstand_t = 4;  // [2.5:0.5:8]
 // X position of the kickstand, mm
-kickstand_x = 24; // [10:1:50]
+kickstand_x = 30; // [10:1:50]
 
 /* [Fit] */
 // General printing clearance between mating parts, mm
@@ -191,9 +194,28 @@ box_stud_top  = box_floor_top + duplo_stud_h;
 box_rim_z     = box_floor_top + box_h;
 box_flare_top_z = box_rim_z - box_collar_h;
 
-box_bot_xy = pad_xy + 2 * box_wall;
-box_top_x  = box_bot_xy + 2 * box_flare_x;
-box_top_y  = box_bot_xy + 2 * box_flare_y;
+box_bot_xy  = pad_xy + 2 * box_wall;
+box_top_x   = box_bot_xy + box_flare_front;
+box_top_y   = box_bot_xy + 2 * box_flare_y;
+// The slope runs the full height of the box and only on the front face. box_shift is how
+// far the top face's centre sits forward of the bottom face's centre.
+box_shift   = box_flare_front / 2;
+box_flare_h = box_flare_top_z - box_z0;
+box_rear_x  = -box_bot_xy / 2; // vertical back wall, relative to deck_x
+box_front_b = box_bot_xy / 2;  // bottom front corner
+box_front_t = box_front_b + box_flare_front; // top front corner
+
+// Fraction of the flare reached at height z, and the outer section there.
+function box_t(z) = min(1, max(0, (z - box_z0) / box_flare_h));
+function box_ox(z) = box_bot_xy + box_flare_front * box_t(z);
+function box_oy(z) = box_bot_xy + 2 * box_flare_y * box_t(z);
+function box_cx(z) = box_flare_front * box_t(z) / 2;
+
+// Perpendicular distance from the front wheel's centre to the box's sloped front face.
+// The box is meant to overhang the wheel, so this replaces a plain horizontal clearance.
+front_face_d =
+    abs(box_flare_front * (axle_z - box_z0) - box_flare_h * (wheelbase - deck_x - box_front_b)) /
+        norm([box_flare_front, box_flare_h]);
 
 tent_z0    = box_rim_z - tent_skirt_h;
 tent_top_z = box_rim_z + tent_h;
@@ -247,19 +269,27 @@ assert(dropout_pinch > 0.1, "dropout_pinch must bite, or the wheel will fall bac
 assert(dropout_pinch < axle_d / 4, "dropout_pinch is so deep the axle cannot be pressed past the neck");
 assert(axle_z - axle_hole_d / 2 - dropout_neck_h > beam_z0, "no room below the axle for the dropout neck");
 assert(axle_z > ground_clearance, "wheel radius must exceed ground_clearance");
-assert(deck_x - box_top_x / 2 > wheel_d / 2 + 2, "cargo box overlaps the rear wheel: increase deck_x or wheelbase");
+assert(deck_x + box_rear_x > wheel_d / 2 + 2, "cargo box overlaps the rear wheel: increase deck_x");
 assert(
-    deck_x + box_top_x / 2 < wheelbase - wheel_d / 2 - 2,
-    "cargo box overlaps the front wheel: reduce deck_x/box_flare_x or increase wheelbase"
+    front_face_d > wheel_d / 2 + 1,
+    "the box front face cuts into the front wheel: reduce box_flare_front or deck_x"
 );
 assert(
-    deck_x - box_top_x / 2 > bar_x + tube_d / 2,
-    "cargo box overlaps the handlebar column: move bar_x back or deck_x forward"
+    deck_x + box_rear_x - tent_wall > bar_x + tube_d / 2 + 1,
+    "the box/tent back wall hits the handlebar: raise deck_x or lower bar_x"
 );
 assert(deck_x - pad_xy / 2 > beam_x0 && deck_x + pad_xy / 2 < beam_x1, "the 2x2 deck must sit within the frame beam");
 assert(beam_x1 > beam_x0 + pad_xy, "wheelbase is too short for the frame beam");
 assert(saddle_w <= beam_w, "saddle_w must not exceed beam_w");
 assert(tent_door_w < box_top_y, "tent_door_w must be narrower than the tent");
+assert(
+    tent_skirt_h <= box_collar_h,
+    "tent_skirt_h must not exceed box_collar_h, or the skirt binds on the flare below it"
+);
+assert(
+    box_flare_front <= box_flare_h,
+    "the box front face leans out past 45 degrees and will not print: raise box_h or lower box_flare_front"
+);
 assert(
     plate_w <= 325 && plate_d <= 320,
     "the print plate does not fit the build volume: export the pieces one at a time with -D part=..."
@@ -435,7 +465,7 @@ module frame() {
         }
 
         // --- steering column + handlebar -------------------------------
-        member([bar_x + 6, beam_z0 + tube_d / 2], [bar_x, bar_z - 12], tube_d, beam_w * 0.7);
+        member([bar_x + 3, beam_z0 + tube_d / 2], [bar_x, bar_z - 12], tube_d, beam_w * 0.7);
         hull() {
             translate([bar_x, 0, bar_z - 12]) ycyl(d = tube_d, l = beam_w * 0.7);
             translate([bar_x, 0, bar_z]) ycyl(d = tube_d * 0.8, l = bar_w);
@@ -457,17 +487,34 @@ module frame() {
                 fork_yc,
                 cheek_t
             );
-            // front
-            xz_plate(
-                [
-                    [beam_x1 - 6, beam_z0], [wheelbase + wheel_d / 2 - 8, beam_z0],
-                    [wheelbase + wheel_d / 2 - 8, axle_z + 3], [wheelbase, axle_z + 7],
-                    [beam_x1 - 6, axle_z + 5]
-                ],
-                4,
-                fork_yc,
-                cheek_t
-            );
+            // Front: a slim fork leg. The tall slab that used to rise alongside the
+            // box is gone, so the box can lean out over the wheel; what is left is a
+            // bed-contact foot wide enough to straddle the dropout slot, plus a low
+            // run back along the beam.
+            difference() {
+                xz_plate(
+                    [
+                        [beam_x1 - 6, beam_z0], [wheelbase + 8, beam_z0],
+                        [wheelbase + 8, axle_z + 3], [wheelbase, axle_z + 7],
+                        [wheelbase - 8, axle_z + 3], [wheelbase - 12, beam_z1],
+                        [beam_x1 - 6, beam_z1]
+                    ],
+                    3,
+                    fork_yc,
+                    cheek_t
+                );
+                // lightening window; apex up so its ceiling is two 45-degree slopes
+                if (fork_window)
+                    xz_plate(
+                        [
+                            [wheelbase - 18, beam_z0 + 1.5], [wheelbase - 7, beam_z0 + 1.5],
+                            [wheelbase - 12.5, beam_z0 + 7.5]
+                        ],
+                        1.5,
+                        fork_yc,
+                        cheek_t + ovr * 2
+                    );
+            }
             // axle bosses
             for (x = [0, wheelbase])
                 translate([x, fork_yc, axle_z])
@@ -525,72 +572,51 @@ module frame_part() {
 //  Cargo box  (modelled in ride position; floor plate from LEGO.scad)
 // =====================================================================
 
+// One horizontal slice of the box shell between two heights. inset1/inset2 pull the
+// section in from the outer surface, which is how the interior and the under-floor
+// hollow are cut. The back wall is vertical; only the front leans out.
+module box_section(z0, z1, inset1 = 0, inset2 = undef) {
+    i2 = is_undef(inset2) ? inset1 : inset2;
+    up(z0)
+        right(box_cx(z0))
+            prismoid(
+                size1 = [box_ox(z0) - 2 * inset1, box_oy(z0) - 2 * inset1],
+                size2 = [box_ox(z1) - 2 * i2, box_oy(z1) - 2 * i2],
+                shift = [box_cx(z1) - box_cx(z0), 0],
+                h = z1 - z0,
+                rounding = max(0.1, box_round - min(inset1, i2)),
+                anchor = BOTTOM
+            );
+}
+
 module cargo_box() {
+    // leave a floor slab between the interior and the hollow under it
+    under_top = box_floor_top - box_wall;
     difference() {
         union() {
-            // straight lower skirt, with a chamfer on the bed-facing edge
-            up(box_z0)
-                prismoid(
-                    size1 = [box_bot_xy - 2 * bottom_chamfer, box_bot_xy - 2 * bottom_chamfer],
-                    size2 = [box_bot_xy, box_bot_xy],
-                    h = bottom_chamfer,
-                    rounding = box_round,
-                    anchor = BOTTOM
-                );
-            up(box_z0 + bottom_chamfer - eps)
-                cuboid(
-                    [box_bot_xy, box_bot_xy, duplo_plate_h - bottom_chamfer + eps],
-                    rounding = box_round,
-                    edges = "Z",
-                    anchor = BOTTOM
-                );
-            // flared tub
-            up(box_floor_top - eps)
-                prismoid(
-                    size1 = [box_bot_xy, box_bot_xy],
-                    size2 = [box_top_x, box_top_y],
-                    h = box_flare_top_z - box_floor_top + eps,
-                    rounding = box_round,
-                    anchor = BOTTOM
-                );
-            // straight collar the tent grips
-            up(box_flare_top_z - eps)
-                cuboid([box_top_x, box_top_y, box_collar_h + eps], rounding = box_round, edges = "Z", anchor = BOTTOM);
+            // Chamfer on the bed-facing edge, then the sloped shell, then the straight
+            // collar. These must be separate sections: a prismoid interpolates linearly,
+            // so one call spanning both would leave the collar tapered and the tent
+            // would have nothing parallel to grip.
+            box_section(box_z0, box_z0 + bottom_chamfer, bottom_chamfer, 0);
+            box_section(box_z0 + bottom_chamfer, box_flare_top_z);
+            box_section(box_flare_top_z - eps, box_rim_z);
         }
-        // --- interior ---------------------------------------------------
-        // straight column around the floor plate, overlapping it slightly
-        up(box_z0 - ovr)
-            cuboid(
-                [pad_xy - 0.8, pad_xy - 0.8, duplo_plate_h + ovr],
-                rounding = max(0.1, box_round - box_wall),
-                edges = "Z",
-                anchor = BOTTOM
-            );
-        // flared cavity above the floor
-        up(box_floor_top)
-            prismoid(
-                size1 = [pad_xy - 0.8, pad_xy - 0.8],
-                size2 = [box_top_x - 2 * box_wall, box_top_y - 2 * box_wall],
-                h = box_flare_top_z - box_floor_top,
-                rounding = max(0.1, box_round - box_wall),
-                anchor = BOTTOM
-            );
-        up(box_flare_top_z - eps)
-            cuboid(
-                [box_top_x - 2 * box_wall, box_top_y - 2 * box_wall, box_collar_h + ovr],
-                rounding = max(0.1, box_round - box_wall),
-                edges = "Z",
-                anchor = BOTTOM
-            );
+        // the interior, with its floor at box_floor_top across the whole footprint
+        box_section(box_floor_top, box_flare_top_z, box_wall);
+        box_section(box_flare_top_z - eps, box_rim_z + ovr, box_wall);
+        // hollow out the skirt under the floor, leaving the DUPLO plate's seat
+        box_section(box_z0 - ovr, under_top, box_wall + 0.4);
         // rim chamfer
         up(box_rim_z - 0.8)
-            rect_tube(
-                size = [box_top_x + ovr, box_top_y + ovr],
-                isize1 = [box_top_x - 2 * box_wall, box_top_y - 2 * box_wall],
-                isize2 = [box_top_x - 2 * box_wall + 1.6, box_top_y - 2 * box_wall + 1.6],
-                h = 0.8 + eps,
-                anchor = BOTTOM
-            );
+            right(box_shift)
+                rect_tube(
+                    size = [box_top_x + ovr, box_top_y + ovr],
+                    isize1 = [box_top_x - 2 * box_wall, box_top_y - 2 * box_wall],
+                    isize2 = [box_top_x - 2 * box_wall + 1.6, box_top_y - 2 * box_wall + 1.6],
+                    h = 0.8 + eps,
+                    anchor = BOTTOM
+                );
     }
     // --- floor: a real 2x2 DUPLO plate, sockets down, studs up inside --
     up(box_z0)
@@ -667,7 +693,7 @@ module wheel_in_place(x) {
 module assembled() {
     color("MediumSeaGreen") frame_part();
     right(deck_x) color("Khaki") cargo_box();
-    right(deck_x) color("IndianRed") rain_tent();
+    right(deck_x + box_shift) color("IndianRed") rain_tent();
     color("DimGray") {
         wheel_in_place(0);
         wheel_in_place(wheelbase);
@@ -700,7 +726,10 @@ module print_plate() {
     translate([-(frame_x_min + frame_x_max) / 2, 0, 0]) frame_print();
     translate([wx1, row2 + wheel_d / 2, 0]) wheel_print();
     translate([wx2, row2 + wheel_d / 2, 0]) wheel_print();
-    translate([bx, row2 + box_top_y / 2, 0]) box_print();
+    // the box is not centred on its own origin: its top face is shifted forward by
+    // box_shift, so offset it to centre its footprint on bx
+    translate([bx - box_shift, row2 + box_top_y / 2, 0])
+        box_print();
     translate([tx, row2 + tent_out_y / 2, 0]) tent_print();
 }
 

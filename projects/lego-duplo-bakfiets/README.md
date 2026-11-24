@@ -39,9 +39,31 @@ LEGO has never made one for DUPLO.
   box**, so a DUPLO figure or a 2x2 brick clicks in and does not fall out when the bike is
   pushed around.
 
-The box's bottom footprint is exactly the 31.8 mm plate and its walls flare outward going
-up. That is both the bakfiets silhouette and the reason the interior stays wider than
-31.8 mm all the way up, which is what a 2x2 brick needs to drop in.
+The box's bottom footprint is exactly the 31.8 mm plate and its walls lean outward going
+up, so the interior stays wider than 31.8 mm all the way to the rim — which is what a 2x2
+brick needs to drop in.
+
+**The box is deliberately lopsided**, the way a real bakfiets box is:
+
+```
+      side view, +X toward the front wheel
+
+      back                              front
+       |  <- vertical, tucks up         /
+       |     against the handlebar     /  <- leans out 23 mm and
+       |                              /      sits over the wheel
+       |_____________________________/
+       |         2x2 DUPLO plate     |
+            ===== frame deck =====          (OOO) front wheel
+```
+
+- The **back wall is vertical** so the box can sit as close to the handlebar as possible —
+  2 mm of clearance, asserted, counting the tent skirt.
+- The **front face leans out** over the front wheel. An assert checks the perpendicular
+  distance from the wheel's centre to that sloped face rather than a plain horizontal gap,
+  because the box is *meant* to overhang the wheel. Default clearance is 4.6 mm.
+- The lean runs the full height of the box so it stays under 45 degrees and needs no
+  support; `box_flare_front <= box_flare_h` is asserted.
 
 > LEGO.scad has **no wheel module** — it only exposes `block()`, `uncenter()`, `place()`,
 > `stack()` and three height functions. The wheel here is our own geometry.
@@ -50,13 +72,13 @@ up. That is both the bakfiets silhouette and the reason the interior stays wider
 
 | | |
 |---|---|
-| Assembled envelope | 138 x 45.8 x 67.2 mm |
+| Assembled envelope | 138 x 45.8 x 69.2 mm |
 | Wheel | 34 mm diameter, 9 mm tread, centred on the bike midplane |
 | Fork | cheeks at +/-5.4 to +/-9.4 mm, 4 mm thick each |
-| Cargo box | 45.8 x 41.8 mm at the rim, 35.8 mm square at the floor |
-| Interior headroom under the tent | 42 mm above the box floor |
-| Solid volume | frame 31.9, box 12.2, tent 12.2, wheel 4.8 cm3 each |
-| Mass (upper bound, solid x 1.28) | ~84 g for all 5 pieces; far less at 15% infill |
+| Cargo box | 58.8 x 41.8 mm at the rim, 35.8 mm square at the floor |
+| Interior headroom under the tent | 44 mm above the box floor |
+| Solid volume | frame 30.3, box 15.0, tent 14.1, wheel 4.8 cm3 each |
+| Mass (upper bound, solid x 1.28) | ~89 g for all 5 pieces; far less at 15% infill |
 
 ## Why
 
@@ -79,6 +101,11 @@ Constraints that drove the design:
 Each wheel sits in a **symmetric fork**, centred on the bike's midplane with a cheek on
 each side. Only the right-hand cheek is cut; the left one stays solid and stops the wheel
 tilting under a sideways shove.
+
+The front fork is a **slim leg**, not a slab: a low run along the beam, a foot wide enough
+to straddle the dropout, and a triangular lightening window (apex up, so its ceiling is
+two 45-degree slopes and it still needs no support). Keeping it low is what lets the cargo
+box lean out over the front wheel. `fork_window = false` fills the window back in.
 
 The right cheek is a real **bicycle dropout** — an axle hole with a slot running down out
 of its bottom edge, and a **neck** between them that is deliberately narrower than the
@@ -130,11 +157,11 @@ that lies down when released.
 | `wheelbase` | `104` | Distance from rear axle to front axle, mm |
 | `ground_clearance` | `4` | Gap between the underside of the frame and the ground, mm |
 | `beam_w` | `16` | Width of the main frame beam (Y), mm |
-| `deck_x` | `60` | X position of the centre of the 2x2 cargo-box mounting deck, mm |
+| `deck_x` | `54` | X position of the centre of the 2x2 cargo-box mounting deck, mm |
 | `saddle_x` | `12` | X position of the saddle, mm |
 | `saddle_z` | `56` | Height of the saddle top above the ground, mm |
 | `saddle_w` | `9` | Width of the saddle ridge a DUPLO figure straddles, mm |
-| `bar_x` | `30` | X position of the handlebar, mm |
+| `bar_x` | `28` | X position of the handlebar, mm |
 | `bar_z` | `52` | Height of the handlebar above the ground, mm |
 | `bar_w` | `32` | Total handlebar width, mm |
 | `tube_d` | `8` | Diameter of the frame tubes, mm |
@@ -152,6 +179,7 @@ that lies down when released.
 | `axle_hole_d` | `6.3` | Diameter of the hole in the frame the peg snaps through, mm |
 | `barb_d` | `7.6` | Diameter of the retaining barb at the tip of the peg, mm. Its underside is a flat shelf, so once it is through the cheek the wheel cannot be pulled back off. |
 | `barb_cone_h` | `1.4` | Length of the barb's lead-in cone, mm |
+| `fork_window` | `true` | Cut a lightening window in each front fork leg |
 | `cheek_t` | `4` | Thickness of each fork cheek, mm |
 | `fork_gap` | `0.3` | Axial gap between the wheel hub and each fork cheek, mm |
 | `dropout_pinch` | `0.3` | How much the dropout slot narrows at its neck, so the axle snaps in and stays, mm |
@@ -160,16 +188,16 @@ that lies down when released.
 | `slot_w` | `1.2` | Width of the cross slot that lets the peg flex, mm |
 | `slot_depth` | `3` | How far the flex slot cuts down into the hub. Longer petals bend without cracking. |
 | **Cargo box** | | |
-| `box_h` | `18` | Height of the box walls above the floor plate, mm |
+| `box_h` | `20` | Height of the box walls above the floor plate, mm |
 | `box_wall` | `2` | Box wall thickness, mm |
-| `box_flare_x` | `5` | How far the box flares outward front and back, bottom to rim, mm |
+| `box_flare_front` | `23` | How far the box leans out toward the front wheel, bottom to rim, mm. The back wall stays vertical so the box can tuck right up against the handlebar. |
 | `box_flare_y` | `3` | How far the box flares outward left and right, bottom to rim, mm |
-| `box_collar_h` | `6` | Height of the straight collar at the top of the box the tent grips, mm |
+| `box_collar_h` | `4` | Height of the straight collar at the top of the box the tent grips, mm |
 | `box_round` | `3` | Corner rounding radius of the box, mm |
 | **Rain tent** | | |
 | `tent_h` | `26` | Height of the tent above the box rim, mm |
 | `tent_wall` | `2` | Tent wall thickness, mm |
-| `tent_skirt_h` | `6` | How far the tent skirt reaches down over the box collar, mm |
+| `tent_skirt_h` | `4` | How far the tent skirt reaches down over the box collar, mm. Must not exceed box_collar_h. |
 | `tent_grip` | `0.25` | Interference per side between the tent skirt and the box collar, mm. Lower = looser. |
 | `tent_taper` | `5` | How far the roof tapers in per side, mm |
 | `tent_door_w` | `26` | Width of the door opening in the front of the tent, mm |
@@ -178,7 +206,7 @@ that lies down when released.
 | `kickstand` | `true` | Add a kickstand stub so the bike parks leaning instead of falling flat |
 | `kickstand_y` | `14` | How far the kickstand foot reaches out to the left, mm |
 | `kickstand_t` | `4` | Thickness of the kickstand stub, mm |
-| `kickstand_x` | `24` | X position of the kickstand, mm |
+| `kickstand_x` | `30` | X position of the kickstand, mm |
 | **Fit** | | |
 | `clearance` | `0.2` | General printing clearance between mating parts, mm |
 | `stud_rescale` | `1` | Resize the DUPLO studs only, to tune clutch power for your printer. 1.03 = 3% wider. |
@@ -196,7 +224,7 @@ Printer and filament defaults: see [docs/print-setup.md](../../docs/print-setup.
 - Layer height / nozzle: 0.20 mm / 0.4 mm
 - Infill / walls: 15% gyroid, 3 walls (the snap peg and the fork cheeks carry the load)
 - Supports: **none** — every piece is modelled bottom-flat in print orientation
-- Print plate (`part = "plate"`, the default): 187.6 x 85.8 x 53 mm, all five pieces
+- Print plate (`part = "plate"`, the default): 213.6 x 85.8 x 53 mm, all five pieces
 - Orientation: as exported. Frame stands upright on its beam; box sits floor-down; tent
   prints **roof-down**, opening up; wheels lie tread-down with the peg pointing up.
 
@@ -224,6 +252,8 @@ print:
 | Wheel will not press into the dropout | Lower `dropout_pinch` or `dropout_neck_h` |
 | Wheel drops back down the slot | Raise `dropout_pinch` |
 | Wheel wobbles side to side | Lower `fork_gap` |
+| Box fouls the handlebar | Raise `deck_x`, or lower `bar_x` |
+| Box front does not clear the wheel | Lower `box_flare_front`, or raise `wheelbase` |
 | Wheel wobbles on its axle | Lower `axle_hole_d` toward `axle_d` |
 | Peg petals snapped on assembly | Raise `slot_depth` or lower `barb_d` |
 
