@@ -5,30 +5,30 @@
 ## What
 
 A toy "bakfiets" (Dutch front-loader cargo bike) at DUPLO scale, styled after a Dolly:
-long low frame, tall flared cargo box between the wheels, removable rain tent on top.
+long low frame, flared cargo box between the wheels, removable rain tent on top.
 LEGO has never made one for DUPLO.
 
 **5 printed pieces from 4 models:**
 
 | Piece | Qty | Notes |
 |-------|-----|-------|
-| Frame | 1 | Beam, saddle, handlebar, both wheel mounts, kickstand, and the 2x2 stud deck |
+| Frame | 1 | Beam, saddle, handlebar, both wheel forks, kickstand, and the 2x2 stud deck |
 | Cargo box | 1 | Clicks onto the frame deck; has DUPLO studs on its inside floor |
 | Rain tent | 1 | Slips over the box collar with a friction fit |
-| Wheel | 2 | Identical, snap onto the frame |
+| Wheel | 2 | Identical. Snaps **permanently** into its fork and cannot be taken off again |
 
 ```
             ___________
-           /  rain tent \         <- slips over the box collar
+           /  rain tent \\         <- slips over the box collar
           |  ___________ |
           | |           ||
           | |  o     o  ||        <- studs INSIDE the box floor
      __   | |___________||           (a figure or 2x2 brick clicks in)
     (__)  |_|  U     U  |_|       <- sockets UNDER the box floor
-     |      \___________/
+     |      \\___________/
   saddle        |  |              <- 2x2 studs on the frame deck
    ___ _________|__|_________
-  (   )                     (   ) <- wheels snap on
+  (O|O)                     (O|O) <- wheel centred in a fork, both sides
    ---    ground clearance    ---
 ```
 
@@ -43,16 +43,20 @@ The box's bottom footprint is exactly the 31.8 mm plate and its walls flare outw
 up. That is both the bakfiets silhouette and the reason the interior stays wider than
 31.8 mm all the way up, which is what a 2x2 brick needs to drop in.
 
+> LEGO.scad has **no wheel module** — it only exposes `block()`, `uncenter()`, `place()`,
+> `stack()` and three height functions. The wheel here is our own geometry.
+
 ### Key dimensions (defaults)
 
 | | |
 |---|---|
 | Assembled envelope | 138 x 45.8 x 67.2 mm |
-| Wheel | 34 mm diameter, 9 mm tread |
+| Wheel | 34 mm diameter, 9 mm tread, centred on the bike midplane |
+| Fork | cheeks at +/-5.4 to +/-9.4 mm, 4 mm thick each |
 | Cargo box | 45.8 x 41.8 mm at the rim, 35.8 mm square at the floor |
 | Interior headroom under the tent | 42 mm above the box floor |
-| Solid volume | frame 28.4, box 12.2, tent 12.2, wheel 4.8 cm3 each |
-| Mass (upper bound, solid x 1.28) | ~80 g for all 5 pieces; far less at 15% infill |
+| Solid volume | frame 31.9, box 12.2, tent 12.2, wheel 4.8 cm3 each |
+| Mass (upper bound, solid x 1.28) | ~84 g for all 5 pieces; far less at 15% infill |
 
 ## Why
 
@@ -63,18 +67,47 @@ This is so our daughter can play with the thing she actually rides in. It is an
 Constraints that drove the design:
 
 - **Must be real DUPLO**, not DUPLO-ish: it has to click onto and accept genuine bricks.
-- **Toddler-safe.** `wheel_d` is 34 mm and asserted `>= 32`, because a smaller wheel fits
-  inside the 31.7 mm small-parts test cylinder. The wheel is the only piece small enough
-  for this to be a question, and it is also the only piece that can come off.
+- **Toddler-safe.** The wheels are the only pieces small enough to matter, so they are
+  `>= 32 mm` (asserted) — below that a wheel fits the 31.7 mm small-parts test cylinder —
+  **and** they are captive: once snapped into the fork they cannot be pulled back off.
 - **No supports, anywhere.** Every piece is modelled in its print orientation and the
   default `part = "plate"` exports all five already laid out on the bed.
 - **A two-wheeler falls over.** Hence the wide tread and the kickstand stub (see below).
 
+## The wheel mount
+
+Each wheel sits in a **symmetric fork**, centred on the bike's midplane with a cheek on
+each side. Only the right-hand cheek is cut; the left one stays solid and stops the wheel
+tilting under a sideways shove.
+
+The right cheek is a real **bicycle dropout** — an axle hole with a slot running down out
+of its bottom edge, and a **neck** between them that is deliberately narrower than the
+axle:
+
+```
+   right cheek, seen from outside
+
+        ( O )     <- axle hole, 6.3 mm, wheel spins here
+         ) (      <- neck, 5.7 mm: axle must be pressed past it
+         | |
+         | |      <- lead-in slot, 6.3 mm
+       --+ +--    <- open at the bottom edge
+```
+
+This is what makes a captive wheel possible at all. The peg is longer than the gap between
+the cheeks, so the wheel can never be slid in sideways — instead it is fed **up from
+below**, with the barb already outboard of the cheek, and the axle pressed past the neck.
+After that:
+
+- the **barb** (flat-shelved, 7.6 mm against a 6.3 mm hole) stops it coming out sideways,
+- the **neck** stops it dropping back down the slot,
+- and the bike's own weight seats the axle in the hole.
+
 ## How it goes together
 
-1. Push a wheel's snap peg through the hole in each frame cheek until the barb clicks
-   past. The four petals of the cross-slotted peg flex 0.55 mm per side going in. The
-   wheel then spins freely on 0.15 mm of radial clearance and will not pull off by hand.
+1. For each wheel: hold it between the fork cheeks with the barb outboard of the right
+   cheek, push the axle up the slot and press it past the neck — 0.15 mm per side — until
+   it snaps into the hole. It then spins on 0.15 mm of radial clearance and is permanent.
 2. Press the cargo box down onto the 2x2 deck studs.
 3. Drop the rain tent over the box collar. The taper self-centres it.
 
@@ -89,7 +122,7 @@ that lies down when released.
 ## Parameters
 
 | **Part** | | |
-| `part` | `"plate"` | Which piece to render. "plate" lays every piece out flat in print orientation; "assembled" is the show-off view. |
+| `part` | `"plate"` | LEGO DUPLO bakfiets — DUPLO-compatible Dutch cargo bike: frame, cargo box, rain tent and wheels SPDX-License-Identifier: CC-BY-NC-SA-4.0 ===================================================================== A DUPLO-scale "bakfiets" (Dutch front-loader cargo bike), styled after a Dolly: long low frame, tall flared cargo box between the wheels, removable rain tent on top.  5 printed pieces from 4 models: frame  x1   cargo box x1   rain tent x1   wheel x2  DUPLO interfaces (generated by LEGO.scad, never hand-rolled): - frame deck : 2x2 studs up          -> the cargo box clicks on - box floor  : 2x2 plate, open bottom -> sockets down onto the deck, studs up INSIDE the box so a figure or brick clicks in  Coordinate system (origin = rear axle centre, projected to the ground): +X : rear -> front +Y : left -> right +Z : ground -> up  Units: millimetres. Angles: degrees.  Export:  ./scripts/export.sh projects/lego-duplo-bakfiets/lego-duplo-bakfiets.scad 3mf ./scripts/export.sh projects/lego-duplo-bakfiets/lego-duplo-bakfiets.scad stl -D 'part="frame"' Check:   set part = "assembled" in the GUI to eyeball the whole bike.  No MakerWorld copy: LEGO.scad is not one of the libraries bundled by MakerWorld's Parametric Model Maker, so scripts/makerworld.py refuses it. ===================================================================== Which piece to render. "plate" lays every piece out flat in print orientation; "assembled" is the show-off view. |
 | **Quality** | | |
 | `fn_preview` | `48` | Facets for curved surfaces in preview (higher = smoother, slower) |
 | `fn_render` | `128` | Facets for curved surfaces in the final render/export |
@@ -117,9 +150,12 @@ that lies down when released.
 | **Axle snap fit** | | |
 | `axle_d` | `6` | Diameter of the wheel's snap peg, mm |
 | `axle_hole_d` | `6.3` | Diameter of the hole in the frame the peg snaps through, mm |
-| `barb_d` | `7.4` | Diameter of the retaining barb at the tip of the peg, mm |
+| `barb_d` | `7.6` | Diameter of the retaining barb at the tip of the peg, mm. Its underside is a flat shelf, so once it is through the cheek the wheel cannot be pulled back off. |
 | `barb_cone_h` | `1.4` | Length of the barb's lead-in cone, mm |
-| `cheek_t` | `4.6` | Thickness of the frame cheek the peg snaps through, mm |
+| `cheek_t` | `4` | Thickness of each fork cheek, mm |
+| `fork_gap` | `0.3` | Axial gap between the wheel hub and each fork cheek, mm |
+| `dropout_pinch` | `0.3` | How much the dropout slot narrows at its neck, so the axle snaps in and stays, mm |
+| `dropout_neck_h` | `1.6` | Height of that neck, mm. Taller = harder to press in, harder to ever come out. |
 | `snap_play` | `0.3` | Axial slack between the hub boss and the frame cheek, mm |
 | `slot_w` | `1.2` | Width of the cross slot that lets the peg flex, mm |
 | `slot_depth` | `3` | How far the flex slot cuts down into the hub. Longer petals bend without cracking. |
@@ -158,7 +194,7 @@ Printer and filament defaults: see [docs/print-setup.md](../../docs/print-setup.
 - Slicer profile: `0.20mm Balanced Strength @BBL H2D`
 - Material: SUNLU PETG High Speed Matte
 - Layer height / nozzle: 0.20 mm / 0.4 mm
-- Infill / walls: 15% gyroid, 3 walls (the snap peg and the frame cheeks carry the load)
+- Infill / walls: 15% gyroid, 3 walls (the snap peg and the fork cheeks carry the load)
 - Supports: **none** — every piece is modelled bottom-flat in print orientation
 - Print plate (`part = "plate"`, the default): 187.6 x 85.8 x 53 mm, all five pieces
 - Orientation: as exported. Frame stands upright on its beam; box sits floor-down; tent
@@ -173,9 +209,10 @@ each one on its own with `-D 'part="..."'`.
 |-----|------|-------|
 | — | none | Everything snaps together; no screws, no glue |
 
-## Tuning the DUPLO fit
+## Tuning the fit
 
-Clutch power is the one thing a render cannot tell you. After the first test print:
+Clutch power and snap force are the things a render cannot tell you. After the first test
+print:
 
 | Symptom | Fix |
 |---------|-----|
@@ -184,8 +221,11 @@ Clutch power is the one thing a render cannot tell you. After the first test pri
 | Sockets bind on real DUPLO | `wall_splines_rescale = 0.3` — the LEGO.scad author notes this value for Bambu + PETG |
 | Tent falls off the box | Raise `tent_grip` |
 | Tent will not go on | Lower `tent_grip` |
-| Wheel wobbles | Lower `axle_hole_d` toward `axle_d` |
-| Wheel peg snapped on assembly | Raise `slot_depth` or lower `barb_d` |
+| Wheel will not press into the dropout | Lower `dropout_pinch` or `dropout_neck_h` |
+| Wheel drops back down the slot | Raise `dropout_pinch` |
+| Wheel wobbles side to side | Lower `fork_gap` |
+| Wheel wobbles on its axle | Lower `axle_hole_d` toward `axle_d` |
+| Peg petals snapped on assembly | Raise `slot_depth` or lower `barb_d` |
 
 ## Export
 
@@ -215,5 +255,6 @@ no `makerworld.json` here. See [docs/makerworld-parametric.md](../../docs/makerw
 Open questions for the first test print:
 
 - Clutch power against real DUPLO bricks (tune with `stud_rescale`, see above).
-- Whether the snap peg survives a toddler's side load on the single-sided wheel mount.
+- Whether the dropout neck is the right stiffness — it has to yield once to let the wheel
+  in and then never again.
 - Whether `saddle_w = 9` actually fits a DUPLO figure's straddle.

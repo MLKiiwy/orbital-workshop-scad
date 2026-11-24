@@ -85,21 +85,28 @@ spoke_hole_d = 5.5; // [3:0.5:9]
 
 /* [Axle snap fit] */
 // Diameter of the wheel's snap peg, mm
-axle_d      = 6;   // [4:0.1:10]
+axle_d         = 6;   // [4:0.1:10]
 // Diameter of the hole in the frame the peg snaps through, mm
-axle_hole_d = 6.3; // [4:0.1:11]
-// Diameter of the retaining barb at the tip of the peg, mm
-barb_d      = 7.4; // [5:0.1:12]
+axle_hole_d    = 6.3; // [4:0.1:11]
+// Diameter of the retaining barb at the tip of the peg, mm. Its underside is a flat
+// shelf, so once it is through the cheek the wheel cannot be pulled back off.
+barb_d         = 7.6; // [5:0.1:12]
 // Length of the barb's lead-in cone, mm
-barb_cone_h = 1.4; // [0.6:0.1:3]
-// Thickness of the frame cheek the peg snaps through, mm
-cheek_t     = 4.6; // [3:0.2:8]
+barb_cone_h    = 1.4; // [0.6:0.1:3]
+// Thickness of each fork cheek, mm
+cheek_t        = 4;   // [3:0.2:8]
+// Axial gap between the wheel hub and each fork cheek, mm
+fork_gap       = 0.3; // [0.15:0.05:1]
+// How much the dropout slot narrows at its neck, so the axle snaps in and stays, mm
+dropout_pinch  = 0.3; // [0:0.05:0.8]
+// Height of that neck, mm. Taller = harder to press in, harder to ever come out.
+dropout_neck_h = 1.6; // [0.8:0.2:4]
 // Axial slack between the hub boss and the frame cheek, mm
-snap_play   = 0.3; // [0.1:0.05:1]
+snap_play      = 0.3; // [0.1:0.05:1]
 // Width of the cross slot that lets the peg flex, mm
-slot_w      = 1.2; // [0.8:0.1:2]
+slot_w         = 1.2; // [0.8:0.1:2]
 // How far the flex slot cuts down into the hub. Longer petals bend without cracking.
-slot_depth  = 3;   // [0:0.5:6]
+slot_depth     = 3;   // [0:0.5:6]
 
 /* [Cargo box] */
 // Height of the box walls above the floor plate, mm
@@ -200,10 +207,12 @@ peg_len    = peg_barb_z + barb_cone_h;
 peg_top    = hub_h + peg_len; // absolute tip height, for the echo
 spoke_r    = (hub_d / 2 + (wheel_d / 2 - tread_t)) / 2;
 
-cheek_y0 = wheel_w / 2 + hub_proud + clearance;
-cheek_y1 = cheek_y0 + cheek_t;
-cheek_yc = (cheek_y0 + cheek_y1) / 2;
-boss_d   = axle_hole_d + 2 * 3.2;
+// Symmetric fork: a cheek each side of the wheel, which is centred on the bike midplane.
+// Only the right-hand cheek is drilled; the left one is a tilt stop.
+fork_y0 = wheel_w / 2 + hub_proud + fork_gap;
+fork_y1 = fork_y0 + cheek_t;
+fork_yc = (fork_y0 + fork_y1) / 2;
+boss_d  = axle_hole_d + 2 * 3.2;
 
 beam_x0 = ceil(wheel_d / 2) + 2;
 beam_x1 = wheelbase - ceil(wheel_d / 2) - 1;
@@ -211,7 +220,7 @@ beam_x1 = wheelbase - ceil(wheel_d / 2) - 1;
 // printed extents of the frame, used by the print-plate layout
 frame_x_min  = -wheel_d / 2 + 8;
 frame_x_max  = wheelbase + wheel_d / 2 - 8;
-frame_y_half = max(beam_w / 2, cheek_y1, bar_w / 2, kickstand ? kickstand_y : 0);
+frame_y_half = max(beam_w / 2, fork_y1, bar_w / 2, kickstand ? kickstand_y : 0);
 
 // print plate: frame on row 1, then two wheels, the box and the tent on row 2
 plate_w = max(frame_x_max - frame_x_min, 2 * wheel_d + box_top_x + tent_out_x + 3 * plate_gap);
@@ -233,6 +242,10 @@ assert(axle_hole_d > axle_d, "axle_hole_d must be larger than axle_d so the whee
 assert(barb_d > axle_hole_d + 0.4, "barb_d must exceed axle_hole_d or the wheel will not stay on");
 assert(barb_d < hub_d, "barb_d must be smaller than hub_d");
 assert(slot_depth < hub_h - web_t, "slot_depth must not cut through the wheel web");
+assert(fork_y0 > wheel_w / 2 + hub_proud, "the fork cheeks would foul the wheel hub: raise fork_gap");
+assert(dropout_pinch > 0.1, "dropout_pinch must bite, or the wheel will fall back out of the slot");
+assert(dropout_pinch < axle_d / 4, "dropout_pinch is so deep the axle cannot be pressed past the neck");
+assert(axle_z - axle_hole_d / 2 - dropout_neck_h > beam_z0, "no room below the axle for the dropout neck");
 assert(axle_z > ground_clearance, "wheel radius must exceed ground_clearance");
 assert(deck_x - box_top_x / 2 > wheel_d / 2 + 2, "cargo box overlaps the rear wheel: increase deck_x or wheelbase");
 assert(
@@ -257,7 +270,7 @@ echo(
         "envelope  L x W x H = ",
         wheelbase + wheel_d,
         " x ",
-        max(tent_out_y, bar_w, cheek_y1 + kickstand_y),
+        max(tent_out_y, bar_w, fork_y1 + kickstand_y),
         " x ",
         tent_top_z
     )
@@ -273,13 +286,24 @@ echo(
         hub_h + peg_barb_z,
         " tip ",
         peg_top,
-        " mm; cheek ",
-        cheek_y0,
-        " -> ",
-        cheek_y1
+        " mm; fork cheeks at +/-",
+        fork_y0,
+        " -> +/-",
+        fork_y1
     )
 );
 echo(str("snap: petal length ", slot_depth + peg_barb_z, " mm must flex ", (barb_d - axle_hole_d) / 2, " mm per side"));
+echo(
+    str(
+        "dropout: neck ",
+        axle_d - dropout_pinch,
+        " mm vs axle ",
+        axle_d,
+        " mm -> press past ",
+        dropout_pinch / 2,
+        " mm per side"
+    )
+);
 echo(
     str(
         "tent headroom above the box floor = ",
@@ -421,33 +445,34 @@ module frame() {
             ycopies(n = 2, spacing = bar_w - 4)
                 ycyl(d = tube_d * 1.15, l = 4, rounding = 1);
 
-        // --- rear wheel cheek ------------------------------------------
-        xz_plate(
-            [
-                [-wheel_d / 2 + 8, beam_z0], [beam_x0 + 7, beam_z0],
-                [beam_x0 + 7, axle_z + 7], [8, axle_z + 7], [-wheel_d / 2 + 8, axle_z + 3]
-            ],
-            4,
-            cheek_yc,
-            cheek_t
-        );
-
-        // --- front wheel cheek -----------------------------------------
-        xz_plate(
-            [
-                [beam_x1 - 6, beam_z0], [wheelbase + wheel_d / 2 - 8, beam_z0],
-                [wheelbase + wheel_d / 2 - 8, axle_z + 3], [wheelbase, axle_z + 7],
-                [beam_x1 - 6, axle_z + 5]
-            ],
-            4,
-            cheek_yc,
-            cheek_t
-        );
-
-        // --- axle bosses -----------------------------------------------
-        for (x = [0, wheelbase])
-            translate([x, cheek_yc, axle_z])
-                ycyl(d = boss_d, l = cheek_t);
+        // --- wheel forks: one cheek each side, mirrored about the midplane ---
+        yflip_copy() {
+            // rear
+            xz_plate(
+                [
+                    [-wheel_d / 2 + 8, beam_z0], [beam_x0 + 7, beam_z0],
+                    [beam_x0 + 7, axle_z + 7], [8, axle_z + 7], [-wheel_d / 2 + 8, axle_z + 3]
+                ],
+                4,
+                fork_yc,
+                cheek_t
+            );
+            // front
+            xz_plate(
+                [
+                    [beam_x1 - 6, beam_z0], [wheelbase + wheel_d / 2 - 8, beam_z0],
+                    [wheelbase + wheel_d / 2 - 8, axle_z + 3], [wheelbase, axle_z + 7],
+                    [beam_x1 - 6, axle_z + 5]
+                ],
+                4,
+                fork_yc,
+                cheek_t
+            );
+            // axle bosses
+            for (x = [0, wheelbase])
+                translate([x, fork_yc, axle_z])
+                    ycyl(d = boss_d, l = cheek_t);
+        }
 
         // --- kickstand --------------------------------------------------
         if (kickstand)
@@ -460,13 +485,39 @@ module frame() {
     }
 }
 
-// frame + the holes the wheels snap into
+// A bicycle dropout: the axle hole, a neck just below it that is deliberately NARROWER
+// than the axle, and a lead-in slot running down out of the bottom edge of the cheek.
+// The wheel is fed up into the fork from below and the axle is pressed past the neck,
+// after which it cannot drop back out; the bike's own weight seats it in the hole.
+// Only the right-hand cheek is cut -- the left one stays solid and limits wheel tilt.
+module dropout() {
+    neck_w   = axle_d - dropout_pinch; // narrower than the axle on purpose
+    neck_top = axle_z - axle_hole_d / 2;
+    neck_bot = neck_top - dropout_neck_h;
+    slot_bot = beam_z0 - ovr; // open at the bottom edge of the cheek
+    t        = cheek_t + ovr * 2;
+    translate([0, fork_yc, 0]) {
+        // the axle hole itself
+        up(axle_z)
+            ycyl(d = axle_hole_d, l = t, chamfer = 0.5);
+        // the neck the axle has to be pressed through
+        up((neck_top + neck_bot) / 2)
+            cuboid(
+                [neck_w, t, dropout_neck_h],
+                rounding = min(neck_w, dropout_neck_h) / 2 - 0.01,
+                edges = "Y"
+            );
+        // lead-in slot below the neck, open at the bottom
+        up((neck_bot + slot_bot) / 2)
+            cuboid([axle_hole_d, t, neck_bot - slot_bot], anchor = CENTER);
+    }
+}
+
+// frame + the dropouts the wheels snap into
 module frame_part() {
     difference() {
         frame();
-        for (x = [0, wheelbase])
-            translate([x, cheek_yc, axle_z])
-                ycyl(d = axle_hole_d, l = cheek_t + ovr * 2, chamfer = 0.5);
+        for (x = [0, wheelbase]) right(x) dropout();
     }
 }
 
