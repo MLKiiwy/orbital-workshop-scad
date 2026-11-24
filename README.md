@@ -30,23 +30,54 @@ projects/<project-name>/   one directory per 3D project
 projects/_template/        starting point for a new project
 docs/print-setup.md        printer, filament, slicer profiles and the design limits they imply
 docs/makerworld-parametric.md  MakerWorld Parametric Model Maker rules, with sources
-libs/                      shared OpenSCAD libraries (git submodules, e.g. BOSL2)
-scripts/                   helper scripts (setup, checks, export, MakerWorld copy)
+libs/                      shared OpenSCAD libraries (git submodules, see Libraries below)
+.claude/skills/openscad/   openscad Claude Code skill (submodule); its validator runs in the checks
+scripts/                   helper scripts (setup, lint, validate, export, MakerWorld copy)
+mise.toml                  pinned dev tools (python, scadfmt, lefthook) and tasks
+lefthook.yml               git hooks; .scadfmt.yaml: formatter style
+.github/workflows/ci.yml   CI: format, lint, validate, render
 ```
+
+## Libraries
+
+Use a library before writing geometry by hand. They are git submodules in [`libs/`](libs/); licenses, MakerWorld
+support and more include examples are in [libs/README.md](libs/README.md).
+
+| Library | Use it for | Include |
+|---------|------------|---------|
+| [BOSL2](https://github.com/BelfrySCAD/BOSL2) | Default toolbox: shapes, attachments, rounding/chamfers, threads, screws, gears, hinges | `include <../../libs/BOSL2/std.scad>` |
+| [Round-Anything](https://github.com/Irev-Dev/Round-Anything) | 2D profiles with a radius per vertex (`polyRound`) | `include <../../libs/Round-Anything/polyround.scad>` |
+| [threads-scad](https://github.com/rcolyer/threads-scad) | Simple metric threads, bolts, nuts, threaded holes | `use <../../libs/threads-scad/threads.scad>` |
+| [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad) | Gridfinity bins and baseplates | `use <../../libs/gridfinity-rebuilt-openscad/src/core/bin.scad>` (+ `standard.scad`) |
+| [LEGO.scad](https://github.com/cfinke/LEGO.scad) | LEGO-compatible bricks and plates (`block()`) | `use <../../libs/LEGO.scad/LEGO.scad>` |
+| [NopSCADlib](https://github.com/nophead/NopSCADlib) | Real-world vitamins (screws, bearings, electronics) for fit checks. **GPL-3.0**: a project using it is GPL | `include <../../libs/NopSCADlib/core.scad>` |
 
 ## Setup
 
-1. Install OpenSCAD (a recent **snapshot** is recommended for the fast Manifold renderer):
+1. Install [mise](https://mise.jdx.dev/getting-started.html) (it installs Python, the `scadfmt` formatter and the
+   `lefthook` git hooks at the versions pinned in [mise.toml](mise.toml)).
+2. Install OpenSCAD (a recent **snapshot** is recommended for the fast Manifold renderer):
    - macOS: `brew install --cask openscad@snapshot` (or `brew install --cask openscad`)
    - Linux: `sudo apt install openscad` or `flatpak install flathub org.openscad.OpenSCAD`
    - Windows: `winget install OpenSCAD.OpenSCAD` or https://openscad.org/downloads.html
-2. Clone with libraries and verify the environment:
+3. Clone with libraries, install the tools and git hooks, and verify the environment:
    ```sh
    git clone --recurse-submodules <repo-url>
    cd orbital-workshop-scad
-   ./scripts/setup.sh          # inits submodules + runs the check
+   ./scripts/setup.sh          # submodules + mise install + git hooks + environment check
    ./scripts/check-openscad.sh # check only
    ```
+
+### Checks
+
+```sh
+mise run fmt        # format the models (scadfmt, style in .scadfmt.yaml)
+mise run check      # format check + lint (repo rules) + strict validation (openscad skill)
+scripts/validate.sh --render   # also export each model and its MakerWorld copy, as CI does
+```
+
+The git hooks run the same checks and block the commit (staged models) or the push (all models) on failure.
+CI runs them on every pull request.
 
 ### VSCode
 
