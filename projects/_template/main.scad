@@ -5,15 +5,15 @@ include <../../libs/BOSL2/std.scad>
 
 /* [Dimensions] */
 // Outer width (X), mm
-width = 40; // [10:1:200]
+width    = 40; // [10:1:200]
 // Outer depth (Y), mm
-depth = 30; // [10:1:200]
+depth    = 30; // [10:1:200]
 // Outer height (Z), mm
-height = 20; // [5:1:150]
+height   = 20; // [5:1:150]
 // Wall thickness, mm
-wall = 2; // [0.8:0.2:6]
+wall     = 2;  // [0.8:0.2:6]
 // Corner rounding radius, mm
-rounding = 3; // [0:0.5:20]
+rounding = 3;  // [0:0.5:20]
 
 /* [Printing] */
 // Bottom edge chamfer (helps against elephant foot), mm
@@ -32,17 +32,21 @@ assert(wall * 2 < min(width, depth), "wall too thick for width/depth");
 assert(rounding * 2 <= min(width, depth), "rounding too large");
 
 module open_box() {
-    diff()
-        cuboid([width, depth, height], rounding = rounding,
-               edges = "Z", anchor = BOTTOM) {
-            // bottom chamfer on the bed-facing edges
-            edge_mask(BOTTOM) chamfer_edge_mask(chamfer = bottom_chamfer);
-            corner_mask(BOTTOM) chamfer_corner_mask(chamfer = bottom_chamfer);
-            // inner cavity
-            tag("remove") position(TOP)
-                cuboid([width - 2 * wall, depth - 2 * wall, height - wall + eps],
-                       rounding = max(rounding - wall, 0), edges = "Z", anchor = TOP);
-        }
+    diff() cuboid([width, depth, height], rounding = rounding, edges = "Z", anchor = BOTTOM) {
+        // bottom chamfer on the bed-facing edges
+        edge_mask(BOTTOM)
+            chamfer_edge_mask(chamfer = bottom_chamfer);
+        corner_mask(BOTTOM) chamfer_corner_mask(chamfer = bottom_chamfer);
+        // inner cavity
+        tag("remove")
+            position(TOP)
+                cuboid(
+                    [width - 2 * wall, depth - 2 * wall, height - wall + eps],
+                    rounding = max(rounding - wall, 0),
+                    edges = "Z",
+                    anchor = TOP
+                );
+    }
 }
 
 open_box();
