@@ -43,15 +43,15 @@ fn_render  = 128; // [64:8:256]
 
 /* [Bike] */
 // Distance from rear axle to front axle, mm
-wheelbase        = 104; // [80:1:140]
+wheelbase        = 116; // [80:1:140]
 // Gap between the underside of the frame and the ground, mm
 ground_clearance = 4;   // [2:0.5:10]
 // Width of the main frame beam (Y), mm
 beam_w = 16; // [10:1:28]
 // X position of the centre of the 2x2 cargo-box mounting deck, mm
-deck_x = 54; // [40:1:80]
+deck_x = 64; // [40:1:80]
 // X position of the handlebar, mm
-bar_x  = 28; // [20:1:50]
+bar_x  = 38; // [20:1:50]
 // Height of the handlebar above the ground, mm
 bar_z  = 52; // [35:1:70]
 // Total handlebar width, mm
@@ -61,33 +61,33 @@ tube_d = 8;  // [5:0.5:14]
 
 /* [Rider] */
 // X position of the rider's two foot studs, mm
-rider_x      = 25; // [16:1:40]
+rider_x      = 23.5; // [16:1:40]
 // Height of the rider's footrest platform above the ground, mm
-rider_z      = 22; // [14:1:36]
+rider_z      = 22;   // [14:1:36]
 // Length of the footrest platform (X), mm
-rider_len    = 12; // [8:0.5:20]
+rider_len    = 10;   // [8:0.5:20]
 // Width of the footrest platform (Y), mm
-rider_w      = 26; // [18:1:34]
+rider_w      = 26;   // [18:1:34]
 // Thickness of the wall the DUPLO figure straddles, mm
-rider_wall_t = 4;  // [2:0.5:9]
+rider_wall_t = 4;    // [2:0.5:9]
 // Height of that wall above the footrests, mm
-rider_wall_h = 11; // [6:0.5:22]
+rider_wall_h = 11;   // [6:0.5:22]
 
 /* [Rear rack] */
-// Add a rack over the back wheel with one stud, for luggage or a passenger
-rear_rack   = true;
+// Add a rack over the back wheel with two studs, for luggage or a passenger
+rear_rack = true;
 // X position of the centre of the rack, mm
-rack_x      = 1;  // [-8:1:14]
+rack_x    = -1;      // [-8:1:14]
 // Height of the rack's top surface above the ground, mm
-rack_z      = 39; // [30:1:52]
+rack_z    = 39;      // [30:1:52]
 // Length of the rack (X), mm
-rack_len    = 16; // [12:1:26]
+rack_len  = 32;      // [12:1:26]
 // Width of the rack (Y), mm
-rack_w      = 18; // [12:1:28]
+rack_w    = 18;      // [12:1:28]
 // Thickness of the rack platform, mm
-rack_t      = 3;  // [2:0.5:6]
-// Diameter of the four stays that carry the rack, mm
-rack_stay_d = 5;  // [3:0.5:9]
+rack_t    = 3;       // [2:0.5:6]
+// How far in from each end of the rack its side plates meet the fork, mm
+rack_base_inset = 9; // [4:0.5:14]
 
 /* [Wheels] */
 // Wheel outside diameter, mm. Keep >= 32 so a wheel cannot pass the 31.7 mm small-parts test cylinder.
@@ -313,7 +313,9 @@ assert(
     "the rider's footrest would foul the rear wheel: raise rider_x or shorten rider_len"
 );
 assert(!rear_rack || rack_z - rack_t > wheel_top_z + 1, "the rear rack would foul the back wheel: raise rack_z");
-assert(!rear_rack || rack_len > 2 * rack_stay_d + 2, "rack_len is too short for its stays");
+assert(!rear_rack || rack_len >= 2 * duplo_pitch, "rack_len must be at least two DUPLO pitches to carry its two studs");
+assert(!rear_rack || rack_w >= duplo_pitch, "rack_w is too narrow for a DUPLO piece");
+assert(!rear_rack || rack_base_inset < rack_len / 2 - 2, "rack_base_inset is too large for rack_len");
 assert(!rear_rack || rack_w / 2 <= fork_y1, "the rack platform overhangs its stays: reduce rack_w");
 assert(
     !rear_rack || rack_x + rack_len / 2 < rider_x - rider_len / 2,
@@ -387,8 +389,10 @@ echo(
 );
 echo(
     str(
-        "rack: stud top at z=",
-        rack_z + duplo_stud_h,
+        "rack: two studs at x=",
+        rack_x - duplo_pitch / 2,
+        " and ",
+        rack_x + duplo_pitch / 2,
         ", platform clears the rear tyre by ",
         rack_z - rack_t - wheel_top_z,
         " mm"
@@ -547,20 +551,41 @@ module rider_stand() {
     }
 }
 
-// Rack over the back wheel with one stud on top, for luggage or a passenger. Two slim
-// stays per side rise out of the rear fork in the cheek planes, clear of the tyre, and
-// the platform bridges the gap between them. The stays start above the dropout slot so
-// that cutting the dropout does not slice them in half.
+// Rack over the back wheel carrying TWO studs in line with the frame, so a 2x1 DUPLO
+// piece sits on it. A side plate in each cheek plane carries it: narrow where it meets
+// the rear fork and flaring outward going up, which both matches a real rack's stays and
+// keeps every overhang well under 45 degrees, so the platform can reach out past the
+// fork at each end without support. The plates are clear of the tyre in Y; the platform
+// bridges the gap between them.
 module rear_rack_assembly() {
-    post_f = rack_x + rack_len / 2 - 2.5;
-    post_r = rack_x - rack_len / 2 + 2.5;
-    yflip_copy() for (x = [post_r, post_f]) translate([x, fork_yc, 0]) hull() {
-        up(axle_z + 2) ycyl(d = rack_stay_d, l = cheek_t);
-        up(rack_z - rack_t) ycyl(d = rack_stay_d, l = cheek_t);
+    base_f = rack_x + rack_len / 2 - rack_base_inset;
+    base_r = rack_x - rack_len / 2 + rack_base_inset;
+    base_z = axle_z + 2; // above the dropout slot, so cutting it leaves the plate whole
+    yflip_copy() difference() {
+        xz_plate(
+            [
+                [base_r, base_z], [base_f, base_z],
+                [rack_x + rack_len / 2, rack_z], [rack_x - rack_len / 2, rack_z]
+            ],
+            3,
+            fork_yc,
+            cheek_t
+        );
+        // lightening window, apex up so its ceiling is two steep slopes
+        if (fork_window)
+            xz_plate(
+                [
+                    [rack_x - 7, base_z + 4], [rack_x + 7, base_z + 4],
+                    [rack_x, rack_z - rack_t - 2]
+                ],
+                2,
+                fork_yc,
+                cheek_t + ovr * 2
+            );
     }
     translate([rack_x, 0, rack_z - rack_t])
         cuboid([rack_len, rack_w, rack_t], rounding = 2, edges = "Z", anchor = BOTTOM);
-    translate([rack_x, 0, rack_z - eps]) duplo_stud();
+    xcopies(n = 2, spacing = duplo_pitch) translate([rack_x, 0, rack_z - eps]) duplo_stud();
 }
 
 module frame() {
