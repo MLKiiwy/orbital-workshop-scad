@@ -47,37 +47,43 @@ wheelbase        = 116; // [80:1:140]
 // Gap between the underside of the frame and the ground, mm
 ground_clearance = 4;   // [2:0.5:10]
 // Width of the main frame beam (Y), mm
-beam_w = 16; // [10:1:28]
+beam_w     = 16;        // [10:1:28]
 // X position of the centre of the 2x2 cargo-box mounting deck, mm
-deck_x = 64; // [40:1:80]
+deck_x     = 64;        // [40:1:80]
 // X position of the handlebar, mm
-bar_x  = 38; // [20:1:50]
+bar_x      = 38;        // [20:1:50]
 // Height of the handlebar above the ground, mm
-bar_z  = 52; // [35:1:70]
-// Total handlebar width, mm
-bar_w  = 32; // [20:1:48]
+bar_z      = 52;        // [35:1:70]
+// Total handlebar width, mm. Roughly the width of the cargo box.
+bar_w      = 42;        // [20:1:48]
+// Height of the handlebar fan above the top of the steering column, mm
+bar_fan_h  = 20;        // [10:1:32]
+// Width of the hole through the handlebar fan, mm. 0 leaves it solid.
+bar_hole_w = 15;        // [0:1:30]
+// Height of that hole, mm
+bar_hole_h = 13;        // [4:1:24]
 // Diameter of the frame tubes, mm
-tube_d = 8;  // [5:0.5:14]
+tube_d     = 8;         // [5:0.5:14]
 
 /* [Rider] */
 // X position of the rider's two foot studs, mm
-rider_x      = 23.5; // [16:1:40]
+rider_x      = 27; // [16:1:40]
 // Height of the rider's footrest platform above the ground, mm
-rider_z      = 22;   // [14:1:36]
+rider_z      = 22; // [14:1:36]
 // Length of the footrest platform (X), mm
-rider_len    = 10;   // [8:0.5:20]
+rider_len    = 16; // [8:0.5:20]
 // Width of the footrest platform (Y), mm
-rider_w      = 26;   // [18:1:34]
+rider_w      = 30; // [18:1:34]
 // Thickness of the wall the DUPLO figure straddles, mm
-rider_wall_t = 4;    // [2:0.5:9]
+rider_wall_t = 4;  // [2:0.5:9]
 // Height of that wall above the footrests, mm
-rider_wall_h = 11;   // [6:0.5:22]
+rider_wall_h = 11; // [6:0.5:22]
 
 /* [Rear rack] */
 // Add a rack over the back wheel with two studs, for luggage or a passenger
 rear_rack = true;
 // X position of the centre of the rack, mm
-rack_x    = -1;      // [-8:1:14]
+rack_x    = 0;       // [-8:1:14]
 // Height of the rack's top surface above the ground, mm
 rack_z    = 39;      // [30:1:52]
 // Length of the rack (X), mm
@@ -151,19 +157,22 @@ box_round       = 3;  // [0:0.5:8]
 
 /* [Rain tent] */
 // Height of the tent above the box rim, mm
-tent_h       = 26;   // [14:1:44]
+tent_h        = 26;   // [14:1:44]
 // Tent wall thickness, mm
-tent_wall    = 2;    // [1.6:0.1:4]
+tent_wall     = 2;    // [1.6:0.1:4]
 // How far the tent skirt reaches down over the box collar, mm. Must not exceed box_collar_h.
-tent_skirt_h = 4;    // [3:0.5:12]
+tent_skirt_h  = 4;    // [3:0.5:12]
 // Interference per side between the tent skirt and the box collar, mm. Lower = looser.
-tent_grip    = 0.25; // [0:0.05:0.6]
-// How far the roof tapers in per side, mm
-tent_taper   = 5;    // [0:0.5:12]
-// Width of the door opening in the front of the tent, mm
-tent_door_w  = 26;   // [0:1:40]
-// Height of the door opening above the box rim, mm
-tent_door_h  = 17;   // [0:1:40]
+tent_grip     = 0.25; // [0:0.05:0.6]
+// How much of the box's lean the tent mirrors. 1 makes it an exact mirror: vertical at
+// the back, leaning in toward the front by as much as the box leans out.
+tent_mirror   = 1;    // [0:0.05:1.2]
+// Width of the window cut into each of the tent's four sides, mm. 0 leaves them solid.
+tent_window_w = 24;   // [0:1:30]
+// Height of those windows, mm
+tent_window_h = 18;   // [4:1:24]
+// Height of the window centres above the box rim, mm
+tent_window_z = 12;   // [5:1:30]
 
 /* [Kickstand] */
 // Add a kickstand stub so the bike parks leaning instead of falling flat
@@ -268,7 +277,7 @@ beam_x1 = wheelbase - ceil(wheel_d / 2) - 1;
 // printed extents of the frame, used by the print-plate layout
 frame_x_min  = -wheel_d / 2 + 8;
 frame_x_max  = wheelbase + wheel_d / 2 - 8;
-frame_y_half = max(beam_w / 2, fork_y1, bar_w / 2, kickstand ? kickstand_y : 0);
+frame_y_half = max(beam_w / 2, fork_y1, bar_w / 2, rider_w / 2, rack_w / 2, kickstand ? kickstand_y : 0);
 
 // print plate: frame on row 1, then two wheels, the box and the tent on row 2
 plate_w = max(frame_x_max - frame_x_min, 2 * wheel_d + box_top_x + tent_out_x + 3 * plate_gap);
@@ -321,7 +330,12 @@ assert(
     !rear_rack || rack_x + rack_len / 2 < rider_x - rider_len / 2,
     "the rear rack runs into the rider's footrest: lower rack_x or rack_len"
 );
-assert(tent_door_w < box_top_y, "tent_door_w must be narrower than the tent");
+assert(tent_window_w < box_top_y - 4 * tent_wall, "tent_window_w is too wide for the tent sides");
+assert(tent_window_z - tent_window_h / 2 > 2, "tent windows would run into the box rim: raise tent_window_z");
+assert(
+    tent_window_z + tent_window_h / 2 < tent_h - tent_wall - 2,
+    "tent windows would run into the roof: lower tent_window_z or tent_window_h"
+);
 assert(
     tent_skirt_h <= box_collar_h,
     "tent_skirt_h must not exceed box_collar_h, or the skirt binds on the flare below it"
@@ -611,10 +625,21 @@ module frame() {
             rear_rack_assembly();
 
         // --- steering column + handlebar -------------------------------
-        member([bar_x + 3, beam_z0 + tube_d / 2], [bar_x, bar_z - 12], tube_d, beam_w * 0.7);
-        hull() {
-            translate([bar_x, 0, bar_z - 12]) ycyl(d = tube_d, l = beam_w * 0.7);
-            translate([bar_x, 0, bar_z]) ycyl(d = tube_d * 0.8, l = bar_w);
+        member([bar_x + 3, beam_z0 + tube_d / 2], [bar_x, bar_z - bar_fan_h], tube_d, beam_w * 0.7);
+        // fan from the steering column out to the bar, with a hole through the middle
+        // so it reads as two arms. The hole's apex points up, so its ceiling is two
+        // slopes steeper than 45 degrees and it prints unsupported.
+        difference() {
+            hull() {
+                translate([bar_x, 0, bar_z - bar_fan_h]) ycyl(d = tube_d, l = beam_w * 0.7);
+                translate([bar_x, 0, bar_z]) ycyl(d = tube_d * 0.8, l = bar_w);
+            }
+            if (bar_hole_w > 0) hull() {
+                translate([bar_x, 0, bar_z - 3.5]) xcyl(d = 3, l = tube_d * 4);
+                ycopies(n = 2, spacing = bar_hole_w)
+                    translate([bar_x, 0, bar_z - 3.5 - bar_hole_h])
+                        xcyl(d = 3, l = tube_d * 4);
+            }
         }
         // grips
         translate([bar_x, 0, bar_z])
@@ -786,12 +811,18 @@ module cargo_box() {
 //  Rain tent  (modelled in ride position; flipped for printing)
 // =====================================================================
 
+// The tent mirrors the cargo box: vertical at the back so it stays clear of the
+// handlebar, leaning IN toward the front by as much as the box leans out. Printed
+// roof-down that lean becomes an overhang of atan(box_flare_front / tent_h) from
+// vertical, which is why tent_h has to stay large enough to keep it under 45 degrees.
 module rain_tent() {
-    roof_x = tent_out_x - 2 * tent_taper;
-    roof_y = tent_out_y - 2 * tent_taper;
+    lean_x = box_flare_front * tent_mirror;
+    lean_y = 2 * box_flare_y * tent_mirror;
+    roof_x = tent_out_x - lean_x;
+    roof_y = tent_out_y - lean_y;
     difference() {
         union() {
-            // skirt band over the box collar
+            // skirt band that grips the box collar
             up(tent_z0)
                 cuboid(
                     [tent_out_x, tent_out_y, tent_skirt_h + eps],
@@ -799,11 +830,12 @@ module rain_tent() {
                     edges = "Z",
                     anchor = BOTTOM
                 );
-            // canopy, tapering in toward the roof
+            // canopy, leaning in toward the front with the back wall vertical
             up(box_rim_z - eps)
                 prismoid(
                     size1 = [tent_out_x, tent_out_y],
                     size2 = [roof_x, roof_y],
+                    shift = [-lean_x / 2, 0],
                     h = tent_h + eps,
                     rounding = box_round + tent_wall,
                     anchor = BOTTOM
@@ -822,22 +854,30 @@ module rain_tent() {
             prismoid(
                 size1 = [tent_out_x - 2 * tent_wall, tent_out_y - 2 * tent_wall],
                 size2 = [roof_x - 2 * tent_wall, roof_y - 2 * tent_wall],
+                shift = [-lean_x / 2, 0],
                 h = tent_h - tent_wall,
                 rounding = box_round,
                 anchor = BOTTOM
             );
-        // door, open all the way down to the skirt edge so it needs no support
-        if (tent_door_w > 0)
-            translate([tent_out_x / 2, 0, tent_z0 - ovr])
+        // One window per side. Two prisms do all four: each runs clean through the
+        // tent and so cuts the wall at both ends. Printed roof-down a window's lower
+        // edge becomes a bridge across its own width, which is why they stay narrow.
+        if (tent_window_w > 0)
+            up(box_rim_z + tent_window_z) {
+                // left and right
                 cuboid(
-                    [
-                        tent_wall * 6, tent_door_w,
-                        tent_door_h + box_rim_z - tent_z0 + ovr
-                    ],
-                    rounding = 3,
-                    edges = "X",
-                    anchor = BOTTOM
+                    [tent_window_w, tent_out_y + ovr, tent_window_h],
+                    rounding = min(tent_window_w, tent_window_h) / 3,
+                    edges = "Y"
                 );
+                // front and back
+                right(-lean_x * tent_window_z / (2 * tent_h))
+                    cuboid(
+                        [tent_out_x + ovr, tent_window_w, tent_window_h],
+                        rounding = min(tent_window_w, tent_window_h) / 3,
+                        edges = "X"
+                    );
+            }
     }
 }
 

@@ -118,6 +118,39 @@ end with no support. The plates sit clear of the tyre in Y and the platform brid
 gap between them. They deliberately start above the dropout slot, so cutting the dropout
 does not slice them in half.
 
+### The rain tent
+
+The tent is a **mirror of the box**: vertical at the back so it stays clear of the
+handlebar, leaning *in* toward the front by exactly as much as the box leans *out*, so
+the two read as one shape.
+
+```
+      side view, +X toward the front wheel
+
+       |\__________        <- tent leans in
+       |           \
+       |____________\      <- box rim / tent skirt
+       |             \
+       |______________\    <- box leans out
+```
+
+Printed roof-down that lean becomes an overhang of `atan(box_flare_front / tent_h)` from
+vertical — 41.5 degrees at the defaults — which is why `tent_h` has to stay large enough
+to keep it under 45. `tent_mirror = 0` gives straight walls instead.
+
+There is a **24 x 18 mm window on each of the four sides**. Two cutting prisms do all
+four: each runs clean through the tent, so it cuts the wall at both ends. Printed
+roof-down a window's lower edge becomes a bridge across its own width, so the corners are
+rounded hard — at the defaults only 12 mm of each window is a flat bridge, and 9.5 mm of
+wall is left either side.
+
+### The handlebar
+
+42 mm wide, about the width of the cargo box, on a fan that rises from the steering
+column. The fan has a triangular hole through it so it reads as two arms rather than a
+plate. The hole's apex points up, so its ceiling is two slopes steeper than 45 degrees
+and it needs no support. `bar_hole_w = 0` leaves the fan solid.
+
 ### Key dimensions (defaults)
 
 | | |
@@ -128,10 +161,12 @@ does not slice them in half.
 | Cargo box | 58.8 x 41.8 mm at the rim, 35.8 mm square at the floor |
 | Interior headroom under the tent | 44 mm above the box floor |
 | Wheelbase | 116 mm |
-| Rider foot studs | 16 mm apart, top at z = 22 mm, 7.5 mm clear of the steering column |
-| Rear rack | two studs 16 mm apart, top at z = 43.5 mm, clears the tyre by 2 mm |
-| Solid volume | frame 33.3, box 15.0, tent 14.1, wheel 4.8 cm3 each |
-| Mass (upper bound, solid x 1.28) | ~92 g for all 5 pieces; far less at 15% infill |
+| Rider foot studs | 16 mm apart, top at z = 22 mm, 4 mm clear of the steering column |
+| Rear rack | centred on the rear axle, two studs 16 mm apart, clears the tyre by 2 mm |
+| Handlebar | 42 mm wide, about the width of the cargo box |
+| Tent windows | 24 x 18 mm, one per side |
+| Solid volume | frame 35.7, box 15.0, tent 10.9, wheel 4.8 cm3 each |
+| Mass (upper bound, solid x 1.28) | ~91 g for all 5 pieces; far less at 15% infill |
 
 ## Why
 
@@ -213,18 +248,21 @@ that lies down when released.
 | `deck_x` | `64` | X position of the centre of the 2x2 cargo-box mounting deck, mm |
 | `bar_x` | `38` | X position of the handlebar, mm |
 | `bar_z` | `52` | Height of the handlebar above the ground, mm |
-| `bar_w` | `32` | Total handlebar width, mm |
+| `bar_w` | `42` | Total handlebar width, mm. Roughly the width of the cargo box. |
+| `bar_fan_h` | `20` | Height of the handlebar fan above the top of the steering column, mm |
+| `bar_hole_w` | `15` | Width of the hole through the handlebar fan, mm. 0 leaves it solid. |
+| `bar_hole_h` | `13` | Height of that hole, mm |
 | `tube_d` | `8` | Diameter of the frame tubes, mm |
 | **Rider** | | |
-| `rider_x` | `23.5` | X position of the rider's two foot studs, mm |
+| `rider_x` | `27` | X position of the rider's two foot studs, mm |
 | `rider_z` | `22` | Height of the rider's footrest platform above the ground, mm |
-| `rider_len` | `10` | Length of the footrest platform (X), mm |
-| `rider_w` | `26` | Width of the footrest platform (Y), mm |
+| `rider_len` | `16` | Length of the footrest platform (X), mm |
+| `rider_w` | `30` | Width of the footrest platform (Y), mm |
 | `rider_wall_t` | `4` | Thickness of the wall the DUPLO figure straddles, mm |
 | `rider_wall_h` | `11` | Height of that wall above the footrests, mm |
 | **Rear rack** | | |
 | `rear_rack` | `true` | Add a rack over the back wheel with two studs, for luggage or a passenger |
-| `rack_x` | `-1` | X position of the centre of the rack, mm |
+| `rack_x` | `0` | X position of the centre of the rack, mm |
 | `rack_z` | `39` | Height of the rack's top surface above the ground, mm |
 | `rack_len` | `32` | Length of the rack (X), mm |
 | `rack_w` | `18` | Width of the rack (Y), mm |
@@ -264,9 +302,10 @@ that lies down when released.
 | `tent_wall` | `2` | Tent wall thickness, mm |
 | `tent_skirt_h` | `4` | How far the tent skirt reaches down over the box collar, mm. Must not exceed box_collar_h. |
 | `tent_grip` | `0.25` | Interference per side between the tent skirt and the box collar, mm. Lower = looser. |
-| `tent_taper` | `5` | How far the roof tapers in per side, mm |
-| `tent_door_w` | `26` | Width of the door opening in the front of the tent, mm |
-| `tent_door_h` | `17` | Height of the door opening above the box rim, mm |
+| `tent_mirror` | `1` | How much of the box's lean the tent mirrors. 1 makes it an exact mirror: vertical at the back, leaning in toward the front by as much as the box leans out. |
+| `tent_window_w` | `24` | Width of the window cut into each of the tent's four sides, mm. 0 leaves them solid. |
+| `tent_window_h` | `18` | Height of those windows, mm |
+| `tent_window_z` | `12` | Height of the window centres above the box rim, mm |
 | **Kickstand** | | |
 | `kickstand` | `true` | Add a kickstand stub so the bike parks leaning instead of falling flat |
 | `kickstand_y` | `14` | How far the kickstand foot reaches out to the left, mm |
@@ -289,7 +328,7 @@ Printer and filament defaults: see [docs/print-setup.md](../../docs/print-setup.
 - Layer height / nozzle: 0.20 mm / 0.4 mm
 - Infill / walls: 15% gyroid, 3 walls (the snap peg and the fork cheeks carry the load)
 - Supports: **none** — every piece is modelled bottom-flat in print orientation
-- Print plate (`part = "plate"`, the default): 221.6 x 85.8 x 52.6 mm, all five pieces
+- Print plate (`part = "plate"`, the default): 220.6 x 95.8 x 52.6 mm, all five pieces
 - Orientation: as exported. Frame stands upright on its beam; box sits floor-down; tent
   prints **roof-down**, opening up; wheels lie tread-down with the peg pointing up.
 
@@ -320,6 +359,7 @@ print:
 | Box fouls the handlebar | Raise `deck_x`, or lower `bar_x` |
 | Box front does not clear the wheel | Lower `box_flare_front`, or raise `wheelbase` |
 | Figure will not straddle the wall | Lower `rider_wall_t`, or `rider_wall_h` |
+| Tent window edges sag | Lower `tent_window_w` — the flat bridge is `tent_window_w` minus twice the corner radius |
 | Rider fouls the steering column | Raise `bar_x`/`deck_x`/`wheelbase`, or lower `rider_x` |
 | Figure's feet will not reach the studs | Adjust `rider_z`; the stud spacing is fixed to the DUPLO pitch |
 | Wheel wobbles on its axle | Lower `axle_hole_d` toward `axle_d` |
