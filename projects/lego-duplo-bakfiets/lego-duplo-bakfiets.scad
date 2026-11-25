@@ -47,23 +47,47 @@ wheelbase        = 104; // [80:1:140]
 // Gap between the underside of the frame and the ground, mm
 ground_clearance = 4;   // [2:0.5:10]
 // Width of the main frame beam (Y), mm
-beam_w   = 16; // [10:1:28]
+beam_w = 16; // [10:1:28]
 // X position of the centre of the 2x2 cargo-box mounting deck, mm
-deck_x   = 54; // [40:1:80]
-// X position of the saddle, mm
-saddle_x = 12; // [0:1:40]
-// Height of the saddle top above the ground, mm
-saddle_z = 56; // [35:1:70]
-// Width of the saddle ridge a DUPLO figure straddles, mm
-saddle_w = 9;  // [6:0.5:16]
+deck_x = 54; // [40:1:80]
 // X position of the handlebar, mm
-bar_x    = 28; // [20:1:50]
+bar_x  = 28; // [20:1:50]
 // Height of the handlebar above the ground, mm
-bar_z    = 52; // [35:1:70]
+bar_z  = 52; // [35:1:70]
 // Total handlebar width, mm
-bar_w    = 32; // [20:1:48]
+bar_w  = 32; // [20:1:48]
 // Diameter of the frame tubes, mm
-tube_d   = 8;  // [5:0.5:14]
+tube_d = 8;  // [5:0.5:14]
+
+/* [Rider] */
+// X position of the rider's two foot studs, mm
+rider_x      = 25; // [16:1:40]
+// Height of the rider's footrest platform above the ground, mm
+rider_z      = 22; // [14:1:36]
+// Length of the footrest platform (X), mm
+rider_len    = 12; // [8:0.5:20]
+// Width of the footrest platform (Y), mm
+rider_w      = 26; // [18:1:34]
+// Thickness of the wall the DUPLO figure straddles, mm
+rider_wall_t = 4;  // [2:0.5:9]
+// Height of that wall above the footrests, mm
+rider_wall_h = 11; // [6:0.5:22]
+
+/* [Rear rack] */
+// Add a rack over the back wheel with one stud, for luggage or a passenger
+rear_rack   = true;
+// X position of the centre of the rack, mm
+rack_x      = 1;  // [-8:1:14]
+// Height of the rack's top surface above the ground, mm
+rack_z      = 39; // [30:1:52]
+// Length of the rack (X), mm
+rack_len    = 16; // [12:1:26]
+// Width of the rack (Y), mm
+rack_w      = 18; // [12:1:28]
+// Thickness of the rack platform, mm
+rack_t      = 3;  // [2:0.5:6]
+// Diameter of the four stays that carry the rack, mm
+rack_stay_d = 5;  // [3:0.5:9]
 
 /* [Wheels] */
 // Wheel outside diameter, mm. Keep >= 32 so a wheel cannot pass the 31.7 mm small-parts test cylinder.
@@ -184,6 +208,8 @@ pad_xy        = 2 * duplo_pitch - 0.2;        // 31.8 mm
 
 // --- derived heights -----------------------------------------------
 axle_z        = wheel_d / 2;
+// top of the tyre above the ground; the rack has to clear this, not the axle height
+wheel_top_z   = axle_z + wheel_d / 2;
 beam_z0       = ground_clearance;
 beam_z1       = beam_z0 + duplo_plate_h; // frame deck top / box floor bottom
 deck_stud_top = beam_z1 + duplo_stud_h;
@@ -280,7 +306,19 @@ assert(
 );
 assert(deck_x - pad_xy / 2 > beam_x0 && deck_x + pad_xy / 2 < beam_x1, "the 2x2 deck must sit within the frame beam");
 assert(beam_x1 > beam_x0 + pad_xy, "wheelbase is too short for the frame beam");
-assert(saddle_w <= beam_w, "saddle_w must not exceed beam_w");
+assert(rider_wall_t < duplo_pitch - duplo_stud_d, "rider_wall_t is too thick to fit between the two foot studs");
+assert(rider_z > beam_z1, "rider_z must be above the top of the beam");
+assert(
+    rider_x - rider_len / 2 > wheel_d / 2 + 1,
+    "the rider's footrest would foul the rear wheel: raise rider_x or shorten rider_len"
+);
+assert(!rear_rack || rack_z - rack_t > wheel_top_z + 1, "the rear rack would foul the back wheel: raise rack_z");
+assert(!rear_rack || rack_len > 2 * rack_stay_d + 2, "rack_len is too short for its stays");
+assert(!rear_rack || rack_w / 2 <= fork_y1, "the rack platform overhangs its stays: reduce rack_w");
+assert(
+    !rear_rack || rack_x + rack_len / 2 < rider_x - rider_len / 2,
+    "the rear rack runs into the rider's footrest: lower rack_x or rack_len"
+);
 assert(tent_door_w < box_top_y, "tent_door_w must be narrower than the tent");
 assert(
     tent_skirt_h <= box_collar_h,
@@ -332,6 +370,28 @@ echo(
         " mm -> press past ",
         dropout_pinch / 2,
         " mm per side"
+    )
+);
+echo(
+    str(
+        "rider: foot studs ",
+        duplo_pitch,
+        " mm apart at z=",
+        rider_z,
+        ", straddle wall ",
+        rider_wall_t,
+        " mm thick in a ",
+        duplo_pitch - duplo_stud_d,
+        " mm gap"
+    )
+);
+echo(
+    str(
+        "rack: stud top at z=",
+        rack_z + duplo_stud_h,
+        ", platform clears the rear tyre by ",
+        rack_z - rack_t - wheel_top_z,
+        " mm"
     )
 );
 echo(
@@ -442,6 +502,67 @@ module frame_deck() {
     }
 }
 
+// A single DUPLO stud on its own. Sliced off a 1x1 plate rather than modelled by hand,
+// so its diameter, height, top rounding and stud_rescale all come from LEGO.scad.
+module duplo_stud() {
+    down(duplo_plate_h) intersection() {
+        block(
+            width = 1,
+            length = 1,
+            height = 1 / 2,
+            brand = "duplo",
+            stud_type = "hollow",
+            block_bottom_type = "closed",
+            reinforcement = true,
+            wall_splines_rescale = wall_splines_rescale,
+            stud_rescale = stud_rescale,
+            $fs = $preview ? 0.6 : 0.2,
+            $fa = $preview ? 6 : 2
+        );
+        up(duplo_plate_h) cuboid([duplo_pitch, duplo_pitch, duplo_stud_h + ovr], anchor = BOTTOM);
+    }
+}
+
+// Where the rider stands: a footrest each side carrying one DUPLO stud, with a low
+// rounded wall down the middle for the figure to straddle. The studs are one DUPLO
+// pitch apart, so a figure's two feet clip straight onto them.
+module rider_stand() {
+    // platform, flaring out from the beam at well under 45 degrees
+    translate([rider_x, 0, beam_z0])
+        prismoid(
+            size1 = [rider_len, beam_w - 0.4],
+            size2 = [rider_len, rider_w],
+            h = rider_z - beam_z0,
+            rounding = 2,
+            anchor = BOTTOM
+        );
+    // one stud per foot
+    ycopies(n = 2, spacing = duplo_pitch)
+        translate([rider_x, 0, rider_z - eps])
+            duplo_stud();
+    // the wall that goes between the figure's legs
+    hull() {
+        translate([rider_x, 0, rider_z - eps]) cuboid([rider_len, rider_wall_t, eps], anchor = BOTTOM);
+        translate([rider_x, 0, rider_z + rider_wall_h - rider_wall_t / 2]) xcyl(d = rider_wall_t, l = rider_len * 0.75);
+    }
+}
+
+// Rack over the back wheel with one stud on top, for luggage or a passenger. Two slim
+// stays per side rise out of the rear fork in the cheek planes, clear of the tyre, and
+// the platform bridges the gap between them. The stays start above the dropout slot so
+// that cutting the dropout does not slice them in half.
+module rear_rack_assembly() {
+    post_f = rack_x + rack_len / 2 - 2.5;
+    post_r = rack_x - rack_len / 2 + 2.5;
+    yflip_copy() for (x = [post_r, post_f]) translate([x, fork_yc, 0]) hull() {
+        up(axle_z + 2) ycyl(d = rack_stay_d, l = cheek_t);
+        up(rack_z - rack_t) ycyl(d = rack_stay_d, l = cheek_t);
+    }
+    translate([rack_x, 0, rack_z - rack_t])
+        cuboid([rack_len, rack_w, rack_t], rounding = 2, edges = "Z", anchor = BOTTOM);
+    translate([rack_x, 0, rack_z - eps]) duplo_stud();
+}
+
 module frame() {
     union() {
         // --- main beam, flat on the bed ---------------------------------
@@ -457,12 +578,12 @@ module frame() {
         right(deck_x)
             frame_deck();
 
-        // --- seat tube + saddle ----------------------------------------
-        member([beam_x0 + 7, beam_z0 + tube_d / 2], [saddle_x, saddle_z - 3], tube_d, beam_w * 0.7);
-        hull() {
-            translate([saddle_x + 7, 0, saddle_z - 2.5]) ycyl(d = 4, l = saddle_w * 0.55);
-            translate([saddle_x - 5, 0, saddle_z - 3]) ycyl(d = 5.5, l = saddle_w);
-        }
+        // --- where the rider stands ------------------------------------
+        rider_stand();
+
+        // --- rack over the back wheel ----------------------------------
+        if (rear_rack)
+            rear_rack_assembly();
 
         // --- steering column + handlebar -------------------------------
         member([bar_x + 3, beam_z0 + tube_d / 2], [bar_x, bar_z - 12], tube_d, beam_w * 0.7);
@@ -477,16 +598,29 @@ module frame() {
 
         // --- wheel forks: one cheek each side, mirrored about the midplane ---
         yflip_copy() {
-            // rear
-            xz_plate(
-                [
-                    [-wheel_d / 2 + 8, beam_z0], [beam_x0 + 7, beam_z0],
-                    [beam_x0 + 7, axle_z + 7], [8, axle_z + 7], [-wheel_d / 2 + 8, axle_z + 3]
-                ],
-                4,
-                fork_yc,
-                cheek_t
-            );
+            // Rear: the same slim leg as the front -- a low run along the beam, a
+            // foot wide enough to straddle the dropout, and a lightening window.
+            difference() {
+                xz_plate(
+                    [
+                        [-8, beam_z0], [beam_x0 + 6, beam_z0],
+                        [beam_x0 + 6, beam_z1], [12, beam_z1],
+                        [8, axle_z + 3], [0, axle_z + 7], [-8, axle_z + 3]
+                    ],
+                    3,
+                    fork_yc,
+                    cheek_t
+                );
+                if (fork_window) xz_plate(
+                    [
+                        [12, beam_z0 + 1.5], [23, beam_z0 + 1.5],
+                        [17.5, beam_z0 + 7.5]
+                    ],
+                    1.5,
+                    fork_yc,
+                    cheek_t + ovr * 2
+                );
+            }
             // Front: a slim fork leg. The tall slab that used to rise alongside the
             // box is gone, so the box can lean out over the wheel; what is left is a
             // bed-contact foot wide enough to straddle the dropout slot, plus a low
