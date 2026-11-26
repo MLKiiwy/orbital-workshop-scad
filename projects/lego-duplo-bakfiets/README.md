@@ -12,7 +12,7 @@ LEGO has never made one for DUPLO.
 
 | Piece | Qty | Notes |
 |-------|-----|-------|
-| Frame | 1 | Beam, handlebar, rider stand, rear rack, both wheel forks, kickstand, 2x2 deck |
+| Frame | 1 | Beam, handlebar, rider stand, rear rack, both wheel forks, 2x2 deck |
 | Cargo box | 1 | Clicks onto the frame deck; has DUPLO studs on its inside floor |
 | Rain tent | 1 | Slips over the box collar with a friction fit |
 | Wheel | 2 | Identical. Snaps **permanently** into its fork and cannot be taken off again |
@@ -87,12 +87,14 @@ There is no saddle. The rider **stands and straddles**, the way DUPLO figures ri
 The two foot studs are exactly one DUPLO pitch apart, so a figure's feet clip straight
 onto them, and the wall between fits in the 6.6 mm gap the studs leave.
 
-**Why the bike is 116 mm long.** A DUPLO stud is 9.4 mm wide on a 16 mm pitch, so its
-inner edge sits only 3.3 mm from the centreline — inside the 9 mm rear tyre. The foot
+**Why the bike is 128 mm long.** A DUPLO stud is 9.4 mm wide on a 16 mm pitch, so its
+inner edge sits only 3.3 mm from the centreline — inside the 12 mm rear tyre. The foot
 studs therefore cannot pass over the tyre at any height below its top, which pins the
 rider between the rear wheel and the steering column. There was not 9.4 mm of room there
 at the original 104 mm wheelbase, so the wheelbase was stretched and the box and
-handlebar moved forward to open the gap. The studs now clear the column by 7.5 mm.
+handlebar moved forward to open the gap; going to 42 mm wheels stretched it again, since
+a taller tyre pushes the rider further forward while the box has to stay clear of the
+front wheel. The studs now clear the column by 3.0 mm.
 
 ### The rear rack
 
@@ -138,11 +140,42 @@ Printed roof-down that lean becomes an overhang of `atan(box_flare_front / tent_
 vertical — 41.5 degrees at the defaults — which is why `tent_h` has to stay large enough
 to keep it under 45. `tent_mirror = 0` gives straight walls instead.
 
-There is a **24 x 18 mm window on each of the four sides**. Two cutting prisms do all
-four: each runs clean through the tent, so it cuts the wall at both ends. Printed
-roof-down a window's lower edge becomes a bridge across its own width, so the corners are
-rounded hard — at the defaults only 12 mm of each window is a flat bridge, and 9.5 mm of
-wall is left either side.
+**The windows are sized in two pairs**, because the two pairs are limited by different
+things. The front and back windows look across the tent's 45.8 mm width, so
+`tent_window_fb_w` tops out around 33 mm. The side windows look along its 62.8 mm length,
+so `tent_window_side_w` has far more room — 34 mm at the defaults, against 30 for the
+front and back. Each pair has its own height as well (`tent_window_fb_h`,
+`tent_window_side_h`); `tent_window_z` sets the centre height for all four.
+
+Two cutting prisms still do all four windows: each runs clean through the tent, so it
+cuts the wall at both ends. The side prism is *not* centred on the tent, though. The
+front wall leans in, so a rectangle cut at a fixed X would run out of wall at its top
+front corner long before its bottom one; the side windows are therefore centred on the
+section at **their own top edge**, the narrowest part of the wall they have to fit
+inside. An assert keeps 4 mm of wall beside every window and reports the maximum width
+each pair can take, and `echo` prints both at render time.
+
+The side windows carry a **cross of mullions**, like a house window, which splits each
+one into four panes:
+
+```
+      left or right wall
+
+       _____________
+      |      |      |
+      |______|______|   <- tent_window_bar_t = 2.4 mm
+      |      |      |
+      |______|______|
+```
+
+It is one subtraction, not an addition: the bars are cut *out of the window cut* before
+that cut is applied, so what survives is exactly the wall thickness, and the bars cannot
+drift off the wall. They stop short of the front and back walls, which stay clear panes
+— `tent_window_cross = false` clears the sides too.
+
+Printed roof-down a window's lower edge becomes a bridge across its own width, so the
+corners are rounded hard. The cross helps here as well: it halves the span, so each
+bridge is about 14 mm rather than 28.
 
 ### The handlebar
 
@@ -155,18 +188,19 @@ and it needs no support. `bar_hole_w = 0` leaves the fan solid.
 
 | | |
 |---|---|
-| Assembled envelope | 150 x 45.8 x 69.2 mm |
-| Wheel | 34 mm diameter, 9 mm tread, centred on the bike midplane |
-| Fork | cheeks at +/-5.4 to +/-9.4 mm, 4 mm thick each |
+| Assembled envelope | 170 x 45.8 x 69.2 mm |
+| Wheel | 42 mm diameter, 12 mm tread, centred on the bike midplane |
+| Fork | cheeks at +/-6.9 to +/-10.9 mm, 4 mm thick each |
 | Cargo box | 58.8 x 41.8 mm at the rim, 35.8 mm square at the floor |
 | Interior headroom under the tent | 44 mm above the box floor |
-| Wheelbase | 116 mm |
-| Rider foot studs | 16 mm apart, top at z = 22 mm, 4 mm clear of the steering column |
-| Rear rack | centred on the rear axle, two studs 16 mm apart, clears the tyre by 2 mm |
+| Wheelbase | 128 mm |
+| Rider foot studs | 16 mm apart, top at z = 22 mm, 3.0 mm clear of the steering column |
+| Rear rack | centred on the rear axle, two studs 16 mm apart, clears the tyre by 3 mm |
 | Handlebar | 42 mm wide, about the width of the cargo box |
-| Tent windows | 24 x 18 mm, one per side |
-| Solid volume | frame 35.7, box 15.0, tent 10.9, wheel 4.8 cm3 each |
-| Mass (upper bound, solid x 1.28) | ~91 g for all 5 pieces; far less at 15% infill |
+| Tent windows | 30 x 18 mm front and back, 34 x 18 mm each side with a 2.4 mm cross |
+| Print plate | 229.6 x 95.8 x 52.6 mm, all five pieces at once |
+| Solid volume | frame 42.2, box 15.0, tent 10.1, wheel 8.3 cm3 each |
+| Mass (upper bound, solid x 1.27) | ~107 g for all 5 pieces; far less at 15% infill |
 
 ## Why
 
@@ -226,27 +260,38 @@ After that:
 2. Press the cargo box down onto the 2x2 deck studs.
 3. Drop the rain tent over the box collar. The taper self-centres it.
 
-### The kickstand
+### The kickstand, and standing up without one
 
-The kickstand foot is **coplanar with the underside of the frame**, not reaching the
-ground. That is deliberate: it keeps the whole frame printable as one flat-bottomed piece
-with no supports. The bike parks leaning about 16 degrees onto the stand, which is what a
-real kickstand does anyway. Set `kickstand = false` for a clean silhouette and a bike
-that lies down when released.
+**`kickstand = false` is the default.** The silhouette is cleaner without it, and the
+wheels were enlarged to 42 mm diameter on a 12 mm tread to compensate.
+
+Be clear about what that buys, though: **wheel diameter does nothing for tipping over.**
+A two-wheeler falls sideways regardless of how big its wheels are, and the loaded cargo
+box puts the centre of gravity well above both axles. What actually resists a nudge is
+tread width, which is why `wheel_w` went from 9 mm to 12 mm along with the diameter. On a
+flat floor the bike will stand; knocked, it will still go over.
+
+If you want it to park reliably, set `kickstand = true` and it comes back. Its foot is
+**coplanar with the underside of the frame**, not reaching the ground — deliberate, so
+the frame stays printable as one flat-bottomed piece with no supports. The bike then
+parks leaning about 16 degrees onto the stand, which is what a real kickstand does
+anyway.
 
 ## Parameters
 
+| Parameter | Default | What it does |
+|---|---|---|
 | **Part** | | |
-| `part` | `"plate"` | LEGO DUPLO bakfiets — DUPLO-compatible Dutch cargo bike: frame, cargo box, rain tent and wheels SPDX-License-Identifier: CC-BY-NC-SA-4.0 ===================================================================== A DUPLO-scale "bakfiets" (Dutch front-loader cargo bike), styled after a Dolly: long low frame, tall flared cargo box between the wheels, removable rain tent on top.  5 printed pieces from 4 models: frame  x1   cargo box x1   rain tent x1   wheel x2  DUPLO interfaces (generated by LEGO.scad, never hand-rolled): - frame deck : 2x2 studs up          -> the cargo box clicks on - box floor  : 2x2 plate, open bottom -> sockets down onto the deck, studs up INSIDE the box so a figure or brick clicks in  Coordinate system (origin = rear axle centre, projected to the ground): +X : rear -> front +Y : left -> right +Z : ground -> up  Units: millimetres. Angles: degrees.  Export:  ./scripts/export.sh projects/lego-duplo-bakfiets/lego-duplo-bakfiets.scad 3mf ./scripts/export.sh projects/lego-duplo-bakfiets/lego-duplo-bakfiets.scad stl -D 'part="frame"' Check:   set part = "assembled" in the GUI to eyeball the whole bike.  No MakerWorld copy: LEGO.scad is not one of the libraries bundled by MakerWorld's Parametric Model Maker, so scripts/makerworld.py refuses it. ===================================================================== Which piece to render. "plate" lays every piece out flat in print orientation; "assembled" is the show-off view. |
+| `part` | `"plate"` | Which piece to render. "plate" lays every piece out flat in print orientation; "assembled" is the show-off view. |
 | **Quality** | | |
 | `fn_preview` | `48` | Facets for curved surfaces in preview (higher = smoother, slower) |
 | `fn_render` | `128` | Facets for curved surfaces in the final render/export |
 | **Bike** | | |
-| `wheelbase` | `116` | Distance from rear axle to front axle, mm |
+| `wheelbase` | `128` | Distance from rear axle to front axle, mm |
 | `ground_clearance` | `4` | Gap between the underside of the frame and the ground, mm |
-| `beam_w` | `16` | Width of the main frame beam (Y), mm |
-| `deck_x` | `64` | X position of the centre of the 2x2 cargo-box mounting deck, mm |
-| `bar_x` | `38` | X position of the handlebar, mm |
+| `beam_w` | `20` | Width of the main frame beam (Y), mm |
+| `deck_x` | `70` | X position of the centre of the 2x2 cargo-box mounting deck, mm |
+| `bar_x` | `43` | X position of the handlebar, mm |
 | `bar_z` | `52` | Height of the handlebar above the ground, mm |
 | `bar_w` | `42` | Total handlebar width, mm. Roughly the width of the cargo box. |
 | `bar_fan_h` | `20` | Height of the handlebar fan above the top of the steering column, mm |
@@ -254,29 +299,29 @@ that lies down when released.
 | `bar_hole_h` | `13` | Height of that hole, mm |
 | `tube_d` | `8` | Diameter of the frame tubes, mm |
 | **Rider** | | |
-| `rider_x` | `27` | X position of the rider's two foot studs, mm |
+| `rider_x` | `32` | X position of the rider's two foot studs, mm |
 | `rider_z` | `22` | Height of the rider's footrest platform above the ground, mm |
 | `rider_len` | `16` | Length of the footrest platform (X), mm |
-| `rider_w` | `30` | Width of the footrest platform (Y), mm |
+| `rider_w` | `34` | Width of the footrest platform (Y), mm |
 | `rider_wall_t` | `4` | Thickness of the wall the DUPLO figure straddles, mm |
 | `rider_wall_h` | `11` | Height of that wall above the footrests, mm |
 | **Rear rack** | | |
 | `rear_rack` | `true` | Add a rack over the back wheel with two studs, for luggage or a passenger |
 | `rack_x` | `0` | X position of the centre of the rack, mm |
-| `rack_z` | `39` | Height of the rack's top surface above the ground, mm |
+| `rack_z` | `48` | Height of the rack's top surface above the ground, mm |
 | `rack_len` | `32` | Length of the rack (X), mm |
 | `rack_w` | `18` | Width of the rack (Y), mm |
 | `rack_t` | `3` | Thickness of the rack platform, mm |
 | `rack_base_inset` | `9` | How far in from each end of the rack its side plates meet the fork, mm |
 | **Wheels** | | |
-| `wheel_d` | `34` | Wheel outside diameter, mm. Keep >= 32 so a wheel cannot pass the 31.7 mm small-parts test cylinder. |
-| `wheel_w` | `9` | Wheel tread width, mm |
-| `tread_t` | `3.2` | Radial thickness of the tread ring, mm |
+| `wheel_d` | `42` | Wheel outside diameter, mm. Keep >= 32 so a wheel cannot pass the 31.7 mm small-parts test cylinder. |
+| `wheel_w` | `12` | Wheel tread width, mm |
+| `tread_t` | `3.6` | Radial thickness of the tread ring, mm |
 | `hub_d` | `13` | Diameter of the hub boss that rubs on the frame, mm |
 | `hub_proud` | `0.6` | How far the hub boss stands proud of the tread, mm |
 | `web_t` | `2.4` | Thickness of the wheel web, mm |
 | `spoke_holes` | `6` | Number of lightening holes in the web |
-| `spoke_hole_d` | `5.5` | Diameter of each lightening hole, mm |
+| `spoke_hole_d` | `7` | Diameter of each lightening hole, mm |
 | **Axle snap fit** | | |
 | `axle_d` | `6` | Diameter of the wheel's snap peg, mm |
 | `axle_hole_d` | `6.3` | Diameter of the hole in the frame the peg snaps through, mm |
@@ -303,11 +348,15 @@ that lies down when released.
 | `tent_skirt_h` | `4` | How far the tent skirt reaches down over the box collar, mm. Must not exceed box_collar_h. |
 | `tent_grip` | `0.25` | Interference per side between the tent skirt and the box collar, mm. Lower = looser. |
 | `tent_mirror` | `1` | How much of the box's lean the tent mirrors. 1 makes it an exact mirror: vertical at the back, leaning in toward the front by as much as the box leans out. |
-| `tent_window_w` | `24` | Width of the window cut into each of the tent's four sides, mm. 0 leaves them solid. |
-| `tent_window_h` | `18` | Height of those windows, mm |
-| `tent_window_z` | `12` | Height of the window centres above the box rim, mm |
+| `tent_window_fb_w` | `30` | Width of the windows in the front and back walls, mm. 0 leaves both solid. The limit here is the tent's width, which is why these are narrower than the side windows. |
+| `tent_window_fb_h` | `18` | Height of the front and back windows, mm |
+| `tent_window_side_w` | `34` | Width of the windows in the left and right walls, mm. 0 leaves both solid. These look along the length of the tent, so there is far more room for them. |
+| `tent_window_side_h` | `18` | Height of the side windows, mm |
+| `tent_window_z` | `12` | Height of every window's centre above the box rim, mm |
+| `tent_window_cross` | `true` | Put a cross of mullions in the middle of each side window, like a house window |
+| `tent_window_bar_t` | `2.4` | Thickness of those mullion bars, mm |
 | **Kickstand** | | |
-| `kickstand` | `true` | Add a kickstand stub so the bike parks leaning instead of falling flat |
+| `kickstand` | `false` | Add a kickstand stub so the bike parks leaning instead of falling flat |
 | `kickstand_y` | `14` | How far the kickstand foot reaches out to the left, mm |
 | `kickstand_t` | `4` | Thickness of the kickstand stub, mm |
 | `kickstand_x` | `30` | X position of the kickstand, mm |
@@ -359,7 +408,10 @@ print:
 | Box fouls the handlebar | Raise `deck_x`, or lower `bar_x` |
 | Box front does not clear the wheel | Lower `box_flare_front`, or raise `wheelbase` |
 | Figure will not straddle the wall | Lower `rider_wall_t`, or `rider_wall_h` |
-| Tent window edges sag | Lower `tent_window_w` — the flat bridge is `tent_window_w` minus twice the corner radius |
+| Tent window edges sag | Narrow that pair (`tent_window_side_w` / `tent_window_fb_w`), or keep `tent_window_cross = true` — the cross halves the bridge |
+| Side windows too small | Raise `tent_window_side_w`; the assert message names the maximum, and `echo` prints it every render |
+| Mullion cross looks heavy | Lower `tent_window_bar_t`, or `tent_window_cross = false` |
+| Bike tips over too easily | `kickstand = true`, or raise `wheel_w` — diameter will not help |
 | Rider fouls the steering column | Raise `bar_x`/`deck_x`/`wheelbase`, or lower `rider_x` |
 | Figure's feet will not reach the studs | Adjust `rider_z`; the stud spacing is fixed to the DUPLO pitch |
 | Wheel wobbles on its axle | Lower `axle_hole_d` toward `axle_d` |
